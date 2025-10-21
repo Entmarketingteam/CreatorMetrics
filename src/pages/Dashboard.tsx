@@ -13,6 +13,9 @@ const dateRanges = ['Last 7 days', 'Last 30 days', 'Last 90 days'];
 
 export default function Dashboard() {
   const [selectedRange, setSelectedRange] = useState('Last 30 days');
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
@@ -45,15 +48,25 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <select
-            value={selectedRange}
-            onChange={(e) => setSelectedRange(e.target.value)}
+            value={selectedRange === 'Last 7 days' ? '7' : selectedRange === 'Last 30 days' ? '30' : selectedRange === 'Last 90 days' ? '90' : 'custom'}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'custom') {
+                setShowDateModal(true);
+              } else if (value === '7') {
+                setSelectedRange('Last 7 days');
+              } else if (value === '30') {
+                setSelectedRange('Last 30 days');
+              } else if (value === '90') {
+                setSelectedRange('Last 90 days');
+              }
+            }}
             className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            {dateRanges.map((range) => (
-              <option key={range} value={range}>
-                {range}
-              </option>
-            ))}
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="custom">{selectedRange.includes(' to ') ? selectedRange : 'Custom Range'}</option>
           </select>
         </div>
       </div>
@@ -244,6 +257,81 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {showDateModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowDateModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Select Date Range
+            </h2>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDateModal(false);
+                  setCustomStartDate('');
+                  setCustomEndDate('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!customStartDate || !customEndDate) {
+                    alert('Please select both dates');
+                    return;
+                  }
+                  if (new Date(customStartDate) > new Date(customEndDate)) {
+                    alert('Start date must be before end date');
+                    return;
+                  }
+                  const formattedRange = `${new Date(customStartDate).toLocaleDateString()} to ${new Date(customEndDate).toLocaleDateString()}`;
+                  setSelectedRange(formattedRange);
+                  setShowDateModal(false);
+                }}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
