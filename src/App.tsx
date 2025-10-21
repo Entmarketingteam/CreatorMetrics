@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Earnings from './pages/Earnings';
 import Products from './pages/Products';
 import Content from './pages/Content';
+import Insights from './pages/Insights';
 import Platforms from './pages/Platforms';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -74,6 +75,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><Content /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/insights"
+          element={
+            <ProtectedRoute>
+              <Layout><Insights /></Layout>
             </ProtectedRoute>
           }
         />
