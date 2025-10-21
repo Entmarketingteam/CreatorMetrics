@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { DollarSign, MousePointerClick, TrendingUp, ShoppingCart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { DollarSign, MousePointerClick, TrendingUp, ShoppingCart, ArrowUpRight, ArrowDownRight, Instagram, Lightbulb, ArrowRight, Eye, Download } from 'lucide-react';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Link } from 'react-router-dom';
 import MetricCard from '../components/MetricCard';
 import {
   mockRevenueByPlatform,
@@ -8,16 +9,120 @@ import {
   mockTopProducts,
   mockRecentActivity
 } from '../data/mockData';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const dateRanges = ['Last 7 days', 'Last 30 days', 'Last 90 days'];
 
+interface TopPost {
+  id: string;
+  post_type: string;
+  caption: string;
+  posted_at: string;
+  thumbnail_url: string;
+  engagement_rate: number;
+  attributed_revenue: number;
+  attributed_sales: number;
+}
+
+interface Insight {
+  id: string;
+  priority: string;
+  title: string;
+  description: string;
+  actionable: string;
+}
+
 export default function Dashboard() {
+  const { user } = useAuth();
   const [selectedRange, setSelectedRange] = useState('Last 30 days');
   const [showDateModal, setShowDateModal] = useState(false);
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  const [topPosts, setTopPosts] = useState<TopPost[]>([]);
+  const [topInsights, setTopInsights] = useState<Insight[]>([]);
+
+  useEffect(() => {
+    loadTopPosts();
+    loadTopInsights();
+  }, [user]);
+
+  const loadTopPosts = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('social_posts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('attributed_revenue', { ascending: false })
+      .limit(3);
+
+    if (data) setTopPosts(data);
+  };
+
+  const loadTopInsights = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('insights')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('priority', 'HIGH')
+      .is('dismissed_at', null)
+      .order('created_at', { ascending: false })
+      .limit(2);
+
+    if (data) setTopInsights(data);
+  };
+
+  const exportDashboardReport = () => {
+    const report = `CREATORMETRICS DASHBOARD REPORT
+Generated: ${new Date().toLocaleString()}
+
+OVERVIEW
+--------
+Total Revenue: $12,450
+Total Clicks: 8,240
+Conversion Rate: 3.8%
+Average Order Value: $42.30
+
+REVENUE BY PLATFORM
+-------------------
+${mockRevenueByPlatform.map(p => `${p.platform}: $${p.revenue.toFixed(2)}`).join('\n')}
+
+TOP PRODUCTS
+------------
+${mockTopProducts.map(p => `${p.name} (${p.platform}): $${p.revenue.toFixed(2)} - ${p.sales} sales`).join('\n')}
+
+TOP CONTENT
+-----------
+${topPosts.map(p => `${p.post_type}: $${p.attributed_revenue.toFixed(2)} revenue - ${p.attributed_sales} sales`).join('\n')}
+
+INSIGHTS
+--------
+${topInsights.map(i => `${i.priority}: ${i.title}\n  ${i.actionable}`).join('\n\n')}
+`;
+
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-report-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
+
+  const getRelativeTime = (date: string) => {
+    const now = new Date();
+    const postDate = new Date(date);
+    const diffMs = now.getTime() - postDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+    return `${Math.floor(diffDays / 30)}mo ago`;
+  };
 
   const getPlatformIcon = (platform: string) => {
     const colors = {
@@ -47,6 +152,13 @@ export default function Dashboard() {
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">Welcome back! Here's your performance overview.</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={exportDashboardReport}
+            className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export Report</span>
+          </button>
           <select
             value={selectedRange === 'Last 7 days' ? '7' : selectedRange === 'Last 30 days' ? '30' : selectedRange === 'Last 90 days' ? '90' : 'custom'}
             onChange={(e) => {
@@ -257,6 +369,109 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Top Performing Content */}
+      {topPosts.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 w-full overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Top Performing Content</h2>
+            <Link
+              to="/content"
+              className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+            >
+              View All <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {topPosts.map((post) => (
+              <Link
+                key={post.id}
+                to="/content"
+                className="group bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700"
+              >
+                <div
+                  className="h-32 relative"
+                  style={{ background: post.thumbnail_url }}
+                >
+                  <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 dark:bg-gray-900/90 px-2 py-1 rounded-full text-xs font-medium">
+                    <Instagram className="w-3 h-3" />
+                    <span>{post.post_type}</span>
+                  </div>
+                  <div className="absolute top-2 right-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
+                    {getRelativeTime(post.posted_at)}
+                  </div>
+                </div>
+                <div className="p-3">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                    {post.caption}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <Eye className="w-3 h-3" />
+                      <span>{post.engagement_rate.toFixed(1)}%</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                        ${post.attributed_revenue.toFixed(0)}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {post.attributed_sales} sales
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Latest Insights */}
+      {topInsights.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 w-full overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Latest Insights</h2>
+            <Link
+              to="/insights"
+              className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+            >
+              See All <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {topInsights.map((insight) => (
+              <Link
+                key={insight.id}
+                to="/insights"
+                className="block bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-4 hover:shadow-md transition-shadow border border-indigo-200 dark:border-indigo-800"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Lightbulb className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full font-medium">
+                        {insight.priority} PRIORITY
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                      {insight.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                      {insight.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 font-medium">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>{insight.actionable}</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showDateModal && (
         <div

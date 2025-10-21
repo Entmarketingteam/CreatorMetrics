@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Instagram, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, X, Play, Info, Calendar, Filter } from 'lucide-react';
+import { Instagram, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, X, Play, Info, Calendar, Filter, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateMockPosts, extractProductMentions } from '../utils/contentGenerator';
@@ -237,6 +237,43 @@ export default function Content() {
 
   const filteredPosts = filterAndSortPosts();
 
+  const exportContentReport = () => {
+    const report = `CONTENT PERFORMANCE REPORT
+Generated: ${new Date().toLocaleString()}
+
+OVERVIEW
+--------
+Total Posts: ${posts.length}
+Total Revenue Attributed: $${posts.reduce((sum, p) => sum + p.attributed_revenue, 0).toFixed(2)}
+Total Sales Attributed: ${posts.reduce((sum, p) => sum + p.attributed_sales, 0)}
+Average Engagement Rate: ${(posts.reduce((sum, p) => sum + p.engagement_rate, 0) / posts.length).toFixed(2)}%
+
+TOP PERFORMING POSTS
+--------------------
+${filteredPosts.slice(0, 10).map((p, idx) =>
+`${idx + 1}. ${p.post_type} - ${new Date(p.posted_at).toLocaleDateString()}
+   Revenue: $${p.attributed_revenue.toFixed(2)}
+   Sales: ${p.attributed_sales}
+   Engagement: ${p.engagement_rate.toFixed(1)}%
+   Caption: ${p.caption.substring(0, 100)}...
+`).join('\n')}
+
+POST TYPE BREAKDOWN
+-------------------
+Reels: ${posts.filter(p => p.post_type === 'REEL').length}
+Posts: ${posts.filter(p => p.post_type === 'POST').length}
+Stories: ${posts.filter(p => p.post_type === 'STORY').length}
+`;
+
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `content-report-${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="space-y-4 sm:space-y-6 w-full">
@@ -361,6 +398,14 @@ export default function Content() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={exportContentReport}
+            className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+
           <select
             value={platformFilter}
             onChange={(e) => setPlatformFilter(e.target.value)}
