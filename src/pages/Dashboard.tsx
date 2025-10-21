@@ -1,41 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { DollarSign, MousePointerClick, TrendingUp, ShoppingCart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import MetricCard from '../components/MetricCard';
-import DateRangePicker from '../components/DateRangePicker';
-import { useDateRange } from '../contexts/DateRangeContext';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import {
+  mockRevenueByPlatform,
+  mockRevenueOverTime,
+  mockTopProducts,
+  mockRecentActivity
+} from '../data/mockData';
 
-interface DashboardMetrics {
-  totalRevenue: number;
-  totalClicks: number;
-  conversionRate: number;
-  avgOrderValue: number;
-  revenueChange: number;
-  clicksChange: number;
-  conversionChange: number;
-  orderValueChange: number;
-}
+const dateRanges = ['Last 7 days', 'Last 30 days', 'Last 90 days'];
 
 export default function Dashboard() {
-  const { dateRange } = useDateRange();
-  const { user } = useAuth();
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
-    totalRevenue: 0,
-    totalClicks: 0,
-    conversionRate: 0,
-    avgOrderValue: 0,
-    revenueChange: 0,
-    clicksChange: 0,
-    conversionChange: 0,
-    orderValueChange: 0,
-  });
-  const [revenueByPlatform, setRevenueByPlatform] = useState<any[]>([]);
-  const [revenueOverTime, setRevenueOverTime] = useState<any[]>([]);
-  const [topProducts, setTopProducts] = useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedRange, setSelectedRange] = useState('Last 30 days');
 
   const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
