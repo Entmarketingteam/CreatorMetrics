@@ -99,6 +99,92 @@ export type Database = {
           updated_at: string;
         };
       };
+      ltk_posts: {
+        Row: {
+          id: string;
+          user_id: string;
+          creator_handle: string;
+          creator_profile_url: string;
+          post_url: string;
+          original_caption: string;
+          category: string | null;
+          scraped_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          creator_handle: string;
+          creator_profile_url: string;
+          post_url: string;
+          original_caption: string;
+          category?: string | null;
+        };
+        Update: {
+          creator_handle?: string;
+          creator_profile_url?: string;
+          post_url?: string;
+          original_caption?: string;
+          category?: string | null;
+        };
+      };
+      ltk_products: {
+        Row: {
+          id: string;
+          post_id: string;
+          title: string;
+          merchant: string;
+          product_url: string;
+          image_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          post_id: string;
+          title: string;
+          merchant: string;
+          product_url: string;
+          image_url?: string | null;
+        };
+        Update: {
+          title?: string;
+          merchant?: string;
+          product_url?: string;
+          image_url?: string | null;
+        };
+      };
+      generated_captions: {
+        Row: {
+          id: string;
+          user_id: string;
+          post_id: string;
+          caption: string;
+          caption_type: 'short' | 'long' | 'alt_text';
+          prompt_type: string;
+          tone: string;
+          hashtags: string[];
+          word_count: number;
+          char_count: number;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          post_id: string;
+          caption: string;
+          caption_type: 'short' | 'long' | 'alt_text';
+          prompt_type: string;
+          tone: string;
+          hashtags?: string[];
+          word_count: number;
+          char_count: number;
+        };
+        Update: {
+          caption?: string;
+          caption_type?: 'short' | 'long' | 'alt_text';
+          prompt_type?: string;
+          tone?: string;
+          hashtags?: string[];
+        };
+      };
     };
   };
 };

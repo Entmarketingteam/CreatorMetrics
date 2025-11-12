@@ -16,7 +16,8 @@ import {
   Sun,
   BarChart3,
   LogOut,
-  Lightbulb
+  Lightbulb,
+  Sparkles
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,6 +44,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/earnings', icon: DollarSign, label: 'Earnings' },
     { path: '/products', icon: Package, label: 'Products' },
     { path: '/content', icon: Image, label: 'Content' },
+    { path: '/ltk-scraper', icon: Sparkles, label: 'LTK Scraper' },
     { path: '/insights', icon: Lightbulb, label: 'Insights' },
     { path: '/platforms', icon: Link2, label: 'Platforms' },
     { path: '/settings', icon: Settings, label: 'Settings' }

@@ -8,6 +8,7 @@ import Content from './pages/Content';
 import Insights from './pages/Insights';
 import Platforms from './pages/Platforms';
 import Settings from './pages/Settings';
+import LTKScraper from './pages/LTKScraper';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -99,6 +100,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><Settings /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ltk-scraper"
+          element={
+            <ProtectedRoute>
+              <Layout><LTKScraper /></Layout>
             </ProtectedRoute>
           }
         />
