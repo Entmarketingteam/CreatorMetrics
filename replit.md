@@ -8,6 +8,25 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**November 13, 2025** - Earnings & Products Pages Redesign
+- Redesigned Earnings page with LTK aesthetic:
+  * Added period toggle (7 days, 30 days, 1 year)
+  * Three summary cards: Total Earnings, Paid, Pending (with color-coded amounts)
+  * Search and filter UI with platform and status filters
+  * Card-based transaction list with platform badges, status indicators, and hover states
+  * Pagination support for large transaction lists
+  * Export to CSV functionality
+  * Supabase integration with mock data fallback
+- Redesigned Products page with LTK aesthetic:
+  * Added period toggle (7 days, 30 days, 1 year)
+  * Two summary cards: Total Revenue, Total Sales
+  * Search and filter UI with platform filter and sort options
+  * Responsive grid layout (1-4 columns) using ProductTile component
+  * ProductTile displays: product image, name, store, clicks, sales, commission
+  * Supabase integration with mock data fallback
+  * Hover states on product cards
+- Both pages follow LTK design system: teal accents, soft backgrounds, clean typography
+
 **November 13, 2025** - CSV Import Feature
 - Added Import page for uploading LTK earnings export CSV files
 - Implemented CSV parser that handles quoted fields and commas
