@@ -242,25 +242,57 @@ export default function InstagramImport() {
         }
       }
 
-      // Insert posts in batches
+      // Insert posts in batches (with duplicate checking)
       let postsImported = 0;
       const batchSize = 50;
 
       for (let i = 0; i < postsData.length; i += batchSize) {
         const batch = postsData.slice(i, i + batchSize);
-        const { error } = await supabase
+        
+        // Check for existing posts by external_post_id
+        const externalIds = batch.map(p => p.external_post_id).filter(id => id);
+        const { data: existingPosts } = await supabase
           .from('social_posts')
-          .upsert(batch, {
-            onConflict: 'user_id,platform,external_post_id',
-            ignoreDuplicates: false
-          });
-
-        if (error) {
-          errors.push(`Database error: ${error.message}`);
-          break;
+          .select('external_post_id, id')
+          .eq('user_id', user.id)
+          .eq('platform', 'INSTAGRAM')
+          .in('external_post_id', externalIds);
+        
+        const existingIds = new Set(existingPosts?.map(p => p.external_post_id) || []);
+        
+        // Split into updates and inserts
+        const toUpdate = batch.filter(p => existingIds.has(p.external_post_id));
+        const toInsert = batch.filter(p => !existingIds.has(p.external_post_id));
+        
+        // Update existing posts
+        for (const post of toUpdate) {
+          const existing = existingPosts?.find(p => p.external_post_id === post.external_post_id);
+          if (existing) {
+            const { error } = await supabase
+              .from('social_posts')
+              .update(post)
+              .eq('id', existing.id);
+            
+            if (error) {
+              errors.push(`Update error for ${post.external_post_id}: ${error.message}`);
+            } else {
+              postsImported++;
+            }
+          }
         }
+        
+        // Insert new posts
+        if (toInsert.length > 0) {
+          const { error } = await supabase
+            .from('social_posts')
+            .insert(toInsert);
 
-        postsImported += batch.length;
+          if (error) {
+            errors.push(`Insert error: ${error.message}`);
+          } else {
+            postsImported += toInsert.length;
+          }
+        }
       }
 
       setResult({
