@@ -3,6 +3,7 @@ import { DollarSign, MousePointerClick, TrendingUp, ShoppingCart, ArrowUpRight, 
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
 import MetricCard from '../components/MetricCard';
+import LTKStatsWidget from '../components/LTKStatsWidget';
 import {
   mockRevenueByPlatform,
   mockRevenueOverTime,
@@ -212,6 +213,9 @@ ${topInsights.map(i => `${i.priority}: ${i.title}\n  ${i.actionable}`).join('\n\
           icon={<ShoppingCart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />}
         />
       </div>
+
+      {/* LTK Stats Widget */}
+      <LTKStatsWidget />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
