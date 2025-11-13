@@ -8,6 +8,30 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**November 13, 2025** - LTK API Discovery & Integration
+- Analyzed LTK HAR files (performance analytics, homepage, earnings pages)
+- Discovered LTK uses Auth0 for authentication (not custom OAuth)
+- Identified `x-id-token` header pattern for API requests
+- Found 14 LTK API endpoints:
+  * Analytics: contributors, hero_chart, performance_summary, performance_stats, top_performers, items_sold, commissions_summary
+  * User/Account: get_user, get_account, get_account_users, get_user_info, get_public_profile
+  * Integration: get_amazon_identities, ltk_search_trends
+- Created comprehensive LTK API Client (`src/lib/ltkApiClient.ts`)
+  * Type-safe interfaces for all 14 endpoints
+  * Automatic 401 retry with token refresh
+  * Query string builder for complex parameters
+- Created documentation:
+  * `docs/ltk-auth0-integration.md` - Auth0 flow, cookies, security
+  * `docs/ltk-api-endpoints.md` - Complete API reference with examples
+- Sample response structures extracted from real user data
+- Integration ready for testing with real Auth0 tokens
+
+**November 13, 2025** - JWT Decoder with Auto-Refresh
+- Fixed critical auto-refresh bug (now survives page reloads)
+- Added comprehensive security warnings about client_secret exposure
+- Documented production security requirements (backend proxy, httpOnly cookies)
+- Fixed LSP errors and cleaned up unused imports
+
 **November 13, 2025** - Instagram Import Feature
 - Created Instagram Import page for Meta Business Suite CSV exports
 - Built CSV parser that handles posts, reels, and stories data (BOM-safe, quoted fields)
