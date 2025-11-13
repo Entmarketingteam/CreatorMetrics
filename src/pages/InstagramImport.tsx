@@ -11,7 +11,7 @@ interface ImportResult {
 
 export default function InstagramImport() {
   const { user } = useAuth();
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
 
@@ -140,34 +140,41 @@ export default function InstagramImport() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      setFiles(Array.from(e.target.files));
       setResult(null);
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFiles(Array.from(e.dataTransfer.files));
       setResult(null);
     }
   };
 
   const handleImport = async () => {
-    if (!file || !user) return;
+    if (files.length === 0 || !user) return;
 
     setImporting(true);
     setResult(null);
 
+    const allPostsData: any[] = [];
+    const allErrors: string[] = [];
+    let totalImported = 0;
+
     try {
-      const text = await file.text();
-      const rows = parseCSV(text);
+      // Process each file sequentially
+      for (const file of files) {
+        try {
+          const text = await file.text();
+          const rows = parseCSV(text);
 
-      const postsData: any[] = [];
-      const errors: string[] = [];
+          const postsData: any[] = [];
+          const errors: string[] = [];
 
-      for (const row of rows) {
+          for (const row of rows) {
         try {
           // Skip rows without required fields
           if (!row['Post ID'] || !row['Publish time']) {
@@ -242,12 +249,19 @@ export default function InstagramImport() {
         }
       }
 
-      // Insert posts in batches (with duplicate checking)
-      let postsImported = 0;
+          // Collect posts from this file
+          allPostsData.push(...postsData);
+          allErrors.push(...errors);
+        } catch (fileError: any) {
+          allErrors.push(`Error processing file ${file.name}: ${fileError.message}`);
+        }
+      }
+
+      // Insert all posts in batches (with duplicate checking)
       const batchSize = 50;
 
-      for (let i = 0; i < postsData.length; i += batchSize) {
-        const batch = postsData.slice(i, i + batchSize);
+      for (let i = 0; i < allPostsData.length; i += batchSize) {
+        const batch = allPostsData.slice(i, i + batchSize);
         
         // Check for existing posts by external_post_id
         const externalIds = batch.map(p => p.external_post_id).filter(id => id);
@@ -274,9 +288,9 @@ export default function InstagramImport() {
               .eq('id', existing.id);
             
             if (error) {
-              errors.push(`Update error for ${post.external_post_id}: ${error.message}`);
+              allErrors.push(`Update error for ${post.external_post_id}: ${error.message}`);
             } else {
-              postsImported++;
+              totalImported++;
             }
           }
         }
@@ -288,17 +302,17 @@ export default function InstagramImport() {
             .insert(toInsert);
 
           if (error) {
-            errors.push(`Insert error: ${error.message}`);
+            allErrors.push(`Insert error: ${error.message}`);
           } else {
-            postsImported += toInsert.length;
+            totalImported += toInsert.length;
           }
         }
       }
 
       setResult({
-        success: errors.length === 0,
-        postsImported,
-        errors,
+        success: allErrors.length === 0,
+        postsImported: totalImported,
+        errors: allErrors,
       });
     } catch (err: any) {
       setResult({
@@ -344,19 +358,22 @@ export default function InstagramImport() {
           id="file-input"
           type="file"
           accept=".csv"
+          multiple
           onChange={handleFileChange}
           className="hidden"
           data-testid="input-file"
         />
         
         <div className="flex flex-col items-center gap-4">
-          {file ? (
+          {files.length > 0 ? (
             <>
               <Instagram className="w-12 h-12 text-primary" />
               <div>
-                <p className="text-body font-medium text-foreground">{file.name}</p>
+                <p className="text-body font-medium text-foreground">
+                  {files.length} {files.length === 1 ? 'file' : 'files'} selected
+                </p>
                 <p className="text-small text-muted-foreground mt-1">
-                  {(file.size / 1024).toFixed(2)} KB
+                  {files.map(f => f.name).join(', ')}
                 </p>
               </div>
             </>
@@ -364,8 +381,8 @@ export default function InstagramImport() {
             <>
               <Upload className="w-12 h-12 text-muted-foreground" />
               <div>
-                <p className="text-body font-medium text-foreground">Drop your CSV file here</p>
-                <p className="text-small text-muted-foreground mt-1">or click to browse</p>
+                <p className="text-body font-medium text-foreground">Drop your CSV files here</p>
+                <p className="text-small text-muted-foreground mt-1">or click to browse (multiple files supported)</p>
               </div>
             </>
           )}
@@ -375,7 +392,7 @@ export default function InstagramImport() {
       {/* Import Button */}
       <button
         onClick={handleImport}
-        disabled={!file || importing || !user}
+        disabled={files.length === 0 || importing || !user}
         className="w-full bg-primary text-primary-foreground rounded-lg px-4 py-3 font-medium hover-elevate active-elevate-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         data-testid="button-import"
       >
