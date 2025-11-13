@@ -8,7 +8,6 @@ import {
   Link2,
   Settings,
   Menu,
-  X,
   Search,
   Bell,
   User,
@@ -16,7 +15,8 @@ import {
   Sun,
   BarChart3,
   LogOut,
-  Lightbulb
+  Lightbulb,
+  Upload
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,6 +45,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/content', icon: Image, label: 'Content' },
     { path: '/insights', icon: Lightbulb, label: 'Insights' },
     { path: '/platforms', icon: Link2, label: 'Platforms' },
+    { path: '/import', icon: Upload, label: 'Import Data' },
     { path: '/settings', icon: Settings, label: 'Settings' }
   ];
 

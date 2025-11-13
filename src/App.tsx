@@ -7,6 +7,7 @@ import Products from './pages/Products';
 import Content from './pages/Content';
 import Insights from './pages/Insights';
 import Platforms from './pages/Platforms';
+import Import from './pages/Import';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -91,6 +92,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><Platforms /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/import"
+          element={
+            <ProtectedRoute>
+              <Layout><Import /></Layout>
             </ProtectedRoute>
           }
         />

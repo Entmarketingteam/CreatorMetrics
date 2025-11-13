@@ -6,6 +6,17 @@ CreatorMetrics is a comprehensive creator analytics dashboard that helps content
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes
+
+**November 13, 2025** - CSV Import Feature
+- Added Import page for uploading LTK earnings export CSV files
+- Implemented CSV parser that handles quoted fields and commas
+- Added status mapping function for LTK statuses (Open → OPEN, Paid → PAID, etc.)
+- Implemented product upsert logic with duplicate detection
+- Added comprehensive error handling for database operations
+- Created UI with drag-drop file upload, progress indicators, and result feedback
+- Import feature accessible via sidebar navigation
+
 # System Architecture
 
 ## Frontend Architecture
@@ -30,6 +41,16 @@ Preferred communication style: Simple, everyday language.
 - Protected routes wrapper that redirects unauthenticated users to login
 - Loading states during authentication checks
 - Separate public routes for login/register
+
+**Pages**
+- Dashboard: Overview of earnings, products, and insights
+- Earnings: Detailed sales transaction history
+- Products: Product performance and top sellers
+- Content: Social media post tracking
+- Insights: AI-generated recommendations
+- Platforms: Affiliate network connection management
+- Import: CSV data import for LTK earnings exports
+- Settings: User profile and preferences
 
 ## Backend Architecture
 
@@ -58,6 +79,14 @@ Preferred communication style: Simple, everyday language.
 - Mock data generators for development/testing (`contentGenerator.ts`)
 - Simulates Instagram posts with realistic engagement metrics
 - Product mention extraction from captions
+
+**Data Import**
+- CSV import functionality for LTK earnings exports (`src/pages/Import.tsx`)
+- Parses LTK CSV format with proper handling of quoted fields
+- Maps LTK statuses (Open, Pending, Paid, Reversed) to database schema
+- Automatically creates/updates products with aggregated metrics
+- Comprehensive error handling and user feedback
+- Supports duplicate detection and data merging
 
 ## Data Flow & Patterns
 
