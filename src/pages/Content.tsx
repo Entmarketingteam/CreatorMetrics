@@ -460,10 +460,14 @@ Stories: ${posts.filter(p => p.post_type === 'STORY').length}
             onClick={() => openPostDetail(post)}
             className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
           >
-            <div
-              className="h-64 relative"
-              style={{ background: post.thumbnail_url }}
-            >
+            <div className="h-64 relative bg-gradient-to-br from-purple-400 via-pink-400 to-red-400">
+              {post.thumbnail_url && post.thumbnail_url.startsWith('http') && !post.thumbnail_url.includes('instagram.com') ? (
+                <img 
+                  src={post.thumbnail_url} 
+                  alt={post.caption.substring(0, 50)}
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
               {post.post_type === 'REEL' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
                   <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center">
@@ -478,6 +482,17 @@ Stories: ${posts.filter(p => p.post_type === 'STORY').length}
               <div className="absolute top-3 right-3 text-xs text-white bg-black/50 px-2 py-1 rounded">
                 {getRelativeTime(post.posted_at)}
               </div>
+              {post.thumbnail_url && post.thumbnail_url.includes('instagram.com') && (
+                <a
+                  href={post.thumbnail_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute bottom-3 right-3 px-2 py-1 text-xs bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white rounded hover:bg-white transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  View on IG
+                </a>
+              )}
             </div>
 
             <div className="p-4">
@@ -530,23 +545,38 @@ Stories: ${posts.filter(p => p.post_type === 'STORY').length}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col lg:flex-row">
-              <div className="lg:w-2/5 bg-gray-100 dark:bg-gray-900 relative">
+              <div className="lg:w-2/5 bg-gradient-to-br from-purple-400 via-pink-400 to-red-400 relative">
                 <button
                   onClick={() => setShowDetailModal(false)}
                   className="absolute top-4 right-4 z-10 w-8 h-8 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors lg:hidden"
                 >
                   <X className="w-4 h-4" />
                 </button>
-                <div
-                  className="w-full aspect-square"
-                  style={{ background: selectedPost.thumbnail_url }}
-                >
+                <div className="w-full aspect-square relative">
+                  {selectedPost.thumbnail_url && selectedPost.thumbnail_url.startsWith('http') && !selectedPost.thumbnail_url.includes('instagram.com') ? (
+                    <img 
+                      src={selectedPost.thumbnail_url} 
+                      alt={selectedPost.caption.substring(0, 50)}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : null}
                   {selectedPost.post_type === 'REEL' && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center">
                         <Play className="w-8 h-8 text-gray-900 ml-1" />
                       </div>
                     </div>
+                  )}
+                  {selectedPost.thumbnail_url && selectedPost.thumbnail_url.includes('instagram.com') && (
+                    <a
+                      href={selectedPost.thumbnail_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-4 right-4 px-3 py-2 bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white rounded-lg hover:bg-white transition-colors flex items-center gap-2"
+                    >
+                      <Instagram className="w-4 h-4" />
+                      View on Instagram
+                    </a>
                   )}
                 </div>
                 <div className="p-4">
