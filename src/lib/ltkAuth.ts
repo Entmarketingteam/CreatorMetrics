@@ -1,3 +1,28 @@
+/**
+ * LTK OAuth Authentication Service
+ * 
+ * SECURITY NOTICE - PRODUCTION DEPLOYMENT REQUIREMENTS:
+ * 
+ * This implementation is designed for DEVELOPMENT AND TESTING only.
+ * Before deploying to production, you MUST implement the following security measures:
+ * 
+ * 1. BACKEND PROXY FOR OAuth FLOWS:
+ *    - Never send client_secret from the browser
+ *    - Create backend endpoints for token exchange and refresh
+ *    - Keep client credentials server-side only
+ * 
+ * 2. SECURE TOKEN STORAGE:
+ *    - Replace localStorage with httpOnly cookies
+ *    - Implement CSRF protection
+ *    - Add XSS mitigation (Content Security Policy)
+ * 
+ * 3. AUTO-REFRESH PERSISTENCE:
+ *    - This service reschedules token refresh on page reload (implemented)
+ *    - Ensure refresh timer survives navigation and reloads
+ * 
+ * See individual method documentation for specific security requirements.
+ */
+
 import { jwtDecode } from 'jwt-decode';
 
 export interface LTKTokens {
@@ -118,6 +143,36 @@ export class LTKAuthService {
 
   /**
    * Refresh the access token using refresh token
+   * 
+   * SECURITY WARNING: This implementation is for TESTING ONLY!
+   * 
+   * Production requirements:
+   * 1. NEVER send client_secret from the browser - it exposes credentials to all users
+   * 2. Create a backend proxy endpoint (e.g., POST /api/ltk/refresh-token) that:
+   *    - Receives only the refresh_token from the frontend
+   *    - Adds client_id and client_secret server-side
+   *    - Forwards the request to LTK's OAuth endpoint
+   *    - Returns the new tokens to the frontend
+   * 3. Use httpOnly cookies instead of localStorage for production token storage
+   * 
+   * Example backend proxy (Express.js):
+   * ```
+   * app.post('/api/ltk/refresh-token', async (req, res) => {
+   *   const { refresh_token } = req.body;
+   *   const response = await fetch('https://api.ltk.ai/oauth/token', {
+   *     method: 'POST',
+   *     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+   *     body: new URLSearchParams({
+   *       grant_type: 'refresh_token',
+   *       refresh_token,
+   *       client_id: process.env.LTK_CLIENT_ID,
+   *       client_secret: process.env.LTK_CLIENT_SECRET,
+   *     }),
+   *   });
+   *   const tokens = await response.json();
+   *   res.json(tokens);
+   * });
+   * ```
    */
   async refreshAccessToken(): Promise<LTKTokens> {
     const tokens = this.getTokens();
@@ -126,9 +181,11 @@ export class LTKAuthService {
     }
 
     try {
-      // TODO: Replace with actual LTK API endpoint when credentials are available
-      // This is a mock implementation for testing
-      const response = await fetch('https://api.ltk.ai/oauth/token', {
+      // PRODUCTION: Replace this with a backend proxy endpoint
+      // Current implementation is INSECURE and for testing only
+      const backendProxyUrl = import.meta.env.VITE_LTK_REFRESH_ENDPOINT || 'https://api.ltk.ai/oauth/token';
+      
+      const response = await fetch(backendProxyUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -136,8 +193,9 @@ export class LTKAuthService {
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: tokens.refresh_token,
+          // WARNING: In production, client_id and client_secret should be added by backend
           client_id: import.meta.env.VITE_LTK_CLIENT_ID || '',
-          client_secret: import.meta.env.VITE_LTK_CLIENT_SECRET || '',
+          client_secret: import.meta.env.VITE_LTK_CLIENT_SECRET || '', // INSECURE! Remove in production
         }),
       });
 
@@ -164,11 +222,17 @@ export class LTKAuthService {
 
   /**
    * Exchange authorization code for tokens (OAuth callback)
+   * 
+   * SECURITY WARNING: This implementation is for TESTING ONLY!
+   * In production, create a backend endpoint that handles the code exchange
+   * to keep client_secret secure on the server side.
    */
   async exchangeCodeForTokens(code: string): Promise<LTKTokens> {
     try {
-      // TODO: Replace with actual LTK API endpoint
-      const response = await fetch('https://api.ltk.ai/oauth/token', {
+      // PRODUCTION: Replace with backend proxy endpoint
+      const backendProxyUrl = import.meta.env.VITE_LTK_TOKEN_ENDPOINT || 'https://api.ltk.ai/oauth/token';
+      
+      const response = await fetch(backendProxyUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -176,8 +240,9 @@ export class LTKAuthService {
         body: new URLSearchParams({
           grant_type: 'authorization_code',
           code,
+          // WARNING: In production, client_id and client_secret should be added by backend
           client_id: import.meta.env.VITE_LTK_CLIENT_ID || '',
-          client_secret: import.meta.env.VITE_LTK_CLIENT_SECRET || '',
+          client_secret: import.meta.env.VITE_LTK_CLIENT_SECRET || '', // INSECURE! Remove in production
           redirect_uri: `${window.location.origin}/auth/ltk/callback`,
         }),
       });
@@ -220,6 +285,14 @@ export class LTKAuthService {
         }
       }, timeUntilRefresh);
     }
+  }
+
+  /**
+   * Public method to schedule refresh on initialization (e.g., after page reload)
+   * CRITICAL: Call this when provider mounts with existing tokens
+   */
+  scheduleTokenRefreshOnInit(tokens: LTKTokens): void {
+    this.scheduleTokenRefresh(tokens);
   }
 
   /**

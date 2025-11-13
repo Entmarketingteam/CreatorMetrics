@@ -31,7 +31,14 @@ export function LTKAuthProvider({ children }: { children: ReactNode }) {
       updateState();
     });
 
-    // Check for token refresh needs on mount
+    // CRITICAL FIX: Reschedule auto-refresh on mount if tokens exist
+    // This ensures auto-refresh survives page reloads
+    const existingTokens = ltkAuthService.getTokens();
+    if (existingTokens) {
+      ltkAuthService.scheduleTokenRefreshOnInit(existingTokens);
+    }
+
+    // Check for immediate refresh needs on mount
     if (ltkAuthService.needsRefresh()) {
       ltkAuthService.refreshAccessToken().catch(console.error);
     }

@@ -1,37 +1,56 @@
-import { Link2, CheckCircle2, XCircle } from 'lucide-react';
-
-const platforms = [
-  {
-    id: 1,
-    name: 'LTK',
-    connected: true,
-    revenue: 5420,
-    color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
-  },
-  {
-    id: 2,
-    name: 'Amazon',
-    connected: true,
-    revenue: 3280,
-    color: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
-  },
-  {
-    id: 3,
-    name: 'Walmart',
-    connected: false,
-    revenue: 0,
-    color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
-  },
-  {
-    id: 4,
-    name: 'ShopStyle',
-    connected: false,
-    revenue: 0,
-    color: 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
-  },
-];
+import { Link, useNavigate } from 'react-router-dom';
+import { Link2, CheckCircle2, XCircle, Key } from 'lucide-react';
+import { useLTKAuth } from '../contexts/LTKAuthContext';
 
 export default function Platforms() {
+  const { isAuthenticated, clearAuth } = useLTKAuth();
+  const navigate = useNavigate();
+
+  const handleLTKConnect = () => {
+    // For now, navigate to JWT Decoder page for manual token input
+    // In production, this would initiate OAuth flow
+    navigate('/jwt-decoder');
+  };
+
+  const handleLTKDisconnect = () => {
+    if (confirm('Are you sure you want to disconnect your LTK account? This will remove all stored tokens.')) {
+      clearAuth();
+    }
+  };
+
+  const platforms = [
+    {
+      id: 1,
+      name: 'LTK',
+      connected: isAuthenticated,
+      revenue: 5420,
+      color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+      hasJWTDecoder: true,
+      onConnect: handleLTKConnect,
+      onDisconnect: handleLTKDisconnect,
+    },
+    {
+      id: 2,
+      name: 'Amazon',
+      connected: true,
+      revenue: 3280,
+      color: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
+    },
+    {
+      id: 3,
+      name: 'Walmart',
+      connected: false,
+      revenue: 0,
+      color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+    },
+    {
+      id: 4,
+      name: 'ShopStyle',
+      connected: false,
+      revenue: 0,
+      color: 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
+    },
+  ];
   return (
     <div className="space-y-4 sm:space-y-6 w-full overflow-x-hidden">
       <div>
@@ -78,15 +97,28 @@ export default function Platforms() {
               </div>
             )}
 
-            <button
-              className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
-                platform.connected
-                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
-              }`}
-            >
-              {platform.connected ? 'Disconnect' : 'Connect'}
-            </button>
+            <div className="space-y-2">
+              {platform.hasJWTDecoder && platform.connected && (
+                <Link
+                  to="/jwt-decoder"
+                  className="w-full px-4 py-2 rounded-lg font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center gap-2"
+                >
+                  <Key className="w-4 h-4" />
+                  View JWT Tokens
+                </Link>
+              )}
+              <button
+                onClick={platform.onConnect || platform.onDisconnect}
+                className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
+                  platform.connected
+                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+                data-testid={`button-${platform.name.toLowerCase()}-${platform.connected ? 'disconnect' : 'connect'}`}
+              >
+                {platform.connected ? 'Disconnect' : 'Connect'}
+              </button>
+            </div>
           </div>
         ))}
       </div>
