@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -10,6 +11,7 @@ import Platforms from './pages/Platforms';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import { initializeLTKAutoRefresh } from './services/ltkRefreshScheduler';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -33,6 +35,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  useEffect(() => {
+    // Initialize LTK auto-refresh on app startup
+    initializeLTKAutoRefresh().catch(err => {
+      console.error('Failed to initialize LTK auto-refresh:', err);
+    });
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
