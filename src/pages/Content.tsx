@@ -149,39 +149,49 @@ export default function Content() {
   const loadAttributions = async (postId: string) => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('attributions')
-      .select(`
-        id,
-        confidence,
-        method,
-        sale:sales (
-          product_name,
-          amount,
-          sale_date
-        )
-      `)
-      .eq('post_id', postId)
-      .order('confidence', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('attributions')
+        .select(`
+          id,
+          confidence,
+          method,
+          sale:sales (
+            product_name,
+            commission,
+            sale_date
+          )
+        `)
+        .eq('post_id', postId)
+        .order('confidence', { ascending: false });
 
-    if (error) {
-      console.error('Error loading attributions:', error);
-      return;
-    }
-
-    // Map the data to match our Attribution type
-    const mappedData = (data || []).map((item: any) => ({
-      id: item.id,
-      confidence: item.confidence,
-      method: item.method,
-      sale: Array.isArray(item.sale) && item.sale.length > 0 ? item.sale[0] : {
-        product_name: 'Unknown',
-        amount: 0,
-        sale_date: new Date().toISOString()
+      if (error) {
+        console.error('Error loading attributions:', error);
+        setAttributions([]);
+        return;
       }
-    }));
 
-    setAttributions(mappedData);
+      // Map the data to match our Attribution type
+      const mappedData = (data || []).map((item: any) => ({
+        id: item.id,
+        confidence: item.confidence,
+        method: item.method,
+        sale: Array.isArray(item.sale) && item.sale.length > 0 ? {
+          product_name: item.sale[0].product_name || 'Unknown',
+          amount: item.sale[0].commission || 0,
+          sale_date: item.sale[0].sale_date || new Date().toISOString()
+        } : {
+          product_name: 'Unknown',
+          amount: 0,
+          sale_date: new Date().toISOString()
+        }
+      }));
+
+      setAttributions(mappedData);
+    } catch (err) {
+      console.error('Error loading attributions:', err);
+      setAttributions([]);
+    }
   };
 
   const openPostDetail = (post: Post) => {
