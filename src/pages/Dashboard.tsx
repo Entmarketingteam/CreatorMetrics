@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell } from 'lucide-react';
+import { Bell, Share2, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PeriodToggle } from '../components/ui/PeriodToggle';
 import { EarningsCard } from '../components/dashboard/EarningsCard';
@@ -115,7 +115,7 @@ export default function Dashboard() {
             className="py-4 bg-foreground text-background font-semibold rounded-lg hover-elevate active-elevate-2 flex items-center justify-center gap-2"
             data-testid="button-share-ltk"
           >
-            <span>↑</span>
+            <Share2 className="w-5 h-5" />
             Share my LTK
           </button>
           <button
@@ -123,7 +123,7 @@ export default function Dashboard() {
             onClick={() => navigate('/content')}
             data-testid="button-create"
           >
-            <span>+</span>
+            <Plus className="w-5 h-5" />
             Create
           </button>
         </div>

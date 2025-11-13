@@ -86,35 +86,49 @@ export function useDashboardData(period: DashboardPeriod) {
       const totalRevenue = sales?.reduce((sum, sale) => sum + (sale.commission_amount || 0), 0) || 0;
       const pendingPayment = sales?.filter(s => s.status === 'OPEN' || s.status === 'PENDING')
         .reduce((sum, sale) => sum + (sale.commission_amount || 0), 0) || 0;
-      const totalSales = sales?.length || 0;
+      const totalSalesCount = sales?.length || 0;
 
       // Fetch top products
       const { data: products } = await supabase
         .from('products')
         .select('*')
         .eq('user_id', user!.id)
-        .order('total_revenue', { ascending: false })
+        .order('avg_commission', { ascending: false })
         .limit(5);
 
       const topProductsData: TopPerformer[] = (products || []).map(p => ({
         id: p.id,
         name: p.name,
-        store: p.store || 'Unknown Store',
-        platform: p.platform,
-        revenue: p.total_revenue || 0,
+        store: p.brand || 'Unknown Store', // Use brand as store
+        platform: p.platform || 'LTK',
+        revenue: p.avg_commission || 0,
         sales: p.total_sales || 0,
+        clicks: p.total_clicks || 0,
         type: 'product' as const,
       }));
+
+      // Add mock post data for now (real social posts integration pending)
+      const mockPosts: TopPerformer[] = [
+        {
+          id: 'post-1',
+          name: 'Fall Fashion Favorites',
+          platform: 'Instagram',
+          revenue: 245.50,
+          sales: 12,
+          clicks: 850,
+          type: 'post',
+        },
+      ];
 
       setMetrics({
         totalRevenue,
         pendingPayment,
-        totalClicks: 8240, // Mock for now
-        totalSales: totalSales,
-        itemsSold: totalSales, // Simplified
-        newFollowers: 485, // Mock
-        totalVisits: 40300, // Mock
-        productClicks: 26500, // Mock
+        totalClicks: products?.reduce((sum, p) => sum + (p.total_clicks || 0), 0) || 0,
+        totalSales: totalRevenue, // Total sales revenue (matching LTK display)
+        itemsSold: totalSalesCount, // Number of items sold (count of sales)
+        newFollowers: 485, // Mock for now
+        totalVisits: 40300, // Mock for now
+        productClicks: products?.reduce((sum, p) => sum + (p.total_clicks || 0), 0) || 0,
         trends: {
           revenue: 11.48,
           clicks: -14.57,
@@ -126,7 +140,7 @@ export function useDashboardData(period: DashboardPeriod) {
         },
       });
 
-      setTopPerformers(topProductsData);
+      setTopPerformers([...topProductsData, ...mockPosts]);
       setRevenueData([]); // Empty for now
 
     } catch (error) {
@@ -142,8 +156,8 @@ export function useDashboardData(period: DashboardPeriod) {
       totalRevenue: 6099.57,
       pendingPayment: 97.01,
       totalClicks: 26500,
-      totalSales: 97569.13,
-      itemsSold: 1600,
+      totalSales: 97569.13, // Total sales revenue (matching LTK display)
+      itemsSold: 1600, // Number of items sold
       newFollowers: 485,
       totalVisits: 40300,
       productClicks: 26500,
@@ -176,6 +190,24 @@ export function useDashboardData(period: DashboardPeriod) {
         sales: 6,
         clicks: 1,
         type: 'product',
+      },
+      {
+        id: 'post-1',
+        name: 'Fall Fashion Favorites',
+        platform: 'Instagram',
+        revenue: 245.50,
+        sales: 12,
+        clicks: 850,
+        type: 'post',
+      },
+      {
+        id: 'post-2',
+        name: 'Cozy Winter Essentials',
+        platform: 'Instagram',
+        revenue: 189.25,
+        sales: 8,
+        clicks: 620,
+        type: 'post',
       },
     ]);
 

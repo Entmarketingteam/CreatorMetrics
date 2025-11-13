@@ -51,7 +51,7 @@ export function AnalyticsSummary({ metrics, period, onViewAll }: AnalyticsSummar
         <MetricStat
           icon={Receipt}
           label="Total sales"
-          value={`$${formatNumber(metrics.totalSales)}`}
+          value={`$${metrics.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           trend={metrics.trends.sales}
           className="pb-0"
         />

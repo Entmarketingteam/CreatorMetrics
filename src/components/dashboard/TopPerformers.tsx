@@ -47,21 +47,52 @@ export function TopPerformers({ performers, period, onViewMore }: TopPerformersP
 
       {/* Content */}
       <div className="space-y-3">
-        {activeTab === 'products' && products.length > 0 ? (
-          products.slice(0, 2).map(product => (
-            <ProductTile
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              store={product.store || 'Unknown'}
-              clicks={product.clicks}
-              sales={product.sales}
-              revenue={product.revenue}
-              imageUrl={product.imageUrl}
-            />
-          ))
-        ) : activeTab === 'posts' && posts.length > 0 ? (
-          <p className="text-body text-muted-foreground text-center py-8">No top posts yet</p>
+        {activeTab === 'products' ? (
+          products.length > 0 ? (
+            products.slice(0, 2).map(product => (
+              <ProductTile
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                store={product.store || 'Unknown'}
+                clicks={product.clicks}
+                sales={product.sales}
+                revenue={product.revenue}
+                imageUrl={product.imageUrl}
+              />
+            ))
+          ) : (
+            <p className="text-body text-muted-foreground text-center py-8">No products yet</p>
+          )
+        ) : activeTab === 'posts' ? (
+          posts.length > 0 ? (
+            posts.slice(0, 2).map(post => (
+              <div
+                key={post.id}
+                className="bg-card rounded-lg p-4 border border-border hover-elevate active-elevate-2 cursor-pointer"
+                data-testid={`post-tile-${post.id}`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="px-2 py-1 bg-primary/10 text-primary rounded text-caption font-medium">
+                    {post.platform}
+                  </div>
+                </div>
+                <h3 className="text-body font-semibold text-foreground mb-3 line-clamp-2">{post.name}</h3>
+                <div className="space-y-2 pt-3 border-t border-border">
+                  <div className="flex items-center justify-between text-caption">
+                    <span className="text-muted-foreground">Revenue</span>
+                    <span className="font-semibold text-foreground">${post.revenue.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-caption">
+                    <span className="text-muted-foreground">Sales</span>
+                    <span className="font-medium text-foreground">{post.sales}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-body text-muted-foreground text-center py-8">No posts yet</p>
+          )
         ) : (
           <p className="text-body text-muted-foreground text-center py-8">No data available</p>
         )}
