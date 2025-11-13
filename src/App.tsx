@@ -8,6 +8,7 @@ import Content from './pages/Content';
 import Insights from './pages/Insights';
 import Platforms from './pages/Platforms';
 import Import from './pages/Import';
+import InstagramImport from './pages/InstagramImport';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -100,6 +101,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><Import /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/instagram-import"
+          element={
+            <ProtectedRoute>
+              <Layout><InstagramImport /></Layout>
             </ProtectedRoute>
           }
         />

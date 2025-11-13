@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Instagram, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, X, Play, Info, Calendar, Filter, Download } from 'lucide-react';
+import { Instagram, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, X, Play, Info, Calendar, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateMockPosts, extractProductMentions } from '../utils/contentGenerator';
@@ -169,7 +169,19 @@ export default function Content() {
       return;
     }
 
-    setAttributions(data || []);
+    // Map the data to match our Attribution type
+    const mappedData = (data || []).map((item: any) => ({
+      id: item.id,
+      confidence: item.confidence,
+      method: item.method,
+      sale: Array.isArray(item.sale) && item.sale.length > 0 ? item.sale[0] : {
+        product_name: 'Unknown',
+        amount: 0,
+        sale_date: new Date().toISOString()
+      }
+    }));
+
+    setAttributions(mappedData);
   };
 
   const openPostDetail = (post: Post) => {

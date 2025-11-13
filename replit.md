@@ -8,6 +8,22 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**November 13, 2025** - Instagram Import Feature
+- Created Instagram Import page for Meta Business Suite CSV exports
+- Built CSV parser that handles posts, reels, and stories data (BOM-safe, quoted fields)
+- Maps Instagram metrics to social_posts table:
+  * CSV "Views" → database "views" (total plays/views)
+  * CSV "Reach" → database "reach" (unique accounts reached)
+  * CSV "Post ID" → database "external_post_id" (Instagram's unique identifier)
+  * CSV "Permalink" → database "thumbnail_url" (for future reference)
+  * Engagement rate = (likes + comments + saves + shares) / reach
+- Database migration created: adds "reach" and "external_post_id" columns
+- Upsert logic prevents duplicate imports using (user_id, platform, external_post_id)
+- Batch insertion (50 posts per batch) for large CSV files
+- Added Instagram Import to sidebar navigation with Instagram icon
+- Content page ready to display imported Instagram data with proper reach metrics
+- Integration with attribution engine for post-to-sale matching
+
 **November 13, 2025** - Earnings & Products Pages Redesign
 - Redesigned Earnings page with LTK aesthetic:
   * Added period toggle (7 days, 30 days, 1 year)

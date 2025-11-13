@@ -16,7 +16,8 @@ import {
   BarChart3,
   LogOut,
   Lightbulb,
-  Upload
+  Upload,
+  Instagram
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,7 +46,8 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/content', icon: Image, label: 'Content' },
     { path: '/insights', icon: Lightbulb, label: 'Insights' },
     { path: '/platforms', icon: Link2, label: 'Platforms' },
-    { path: '/import', icon: Upload, label: 'Import Data' },
+    { path: '/import', icon: Upload, label: 'LTK Import' },
+    { path: '/instagram-import', icon: Instagram, label: 'Instagram Import' },
     { path: '/settings', icon: Settings, label: 'Settings' }
   ];
 
