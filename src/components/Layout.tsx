@@ -16,7 +16,8 @@ import {
   Sun,
   BarChart3,
   LogOut,
-  Lightbulb
+  Lightbulb,
+  Key
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,6 +46,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/content', icon: Image, label: 'Content' },
     { path: '/insights', icon: Lightbulb, label: 'Insights' },
     { path: '/platforms', icon: Link2, label: 'Platforms' },
+    { path: '/jwt-decoder', icon: Key, label: 'JWT Decoder' },
     { path: '/settings', icon: Settings, label: 'Settings' }
   ];
 

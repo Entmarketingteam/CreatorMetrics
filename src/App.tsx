@@ -8,6 +8,7 @@ import Content from './pages/Content';
 import Insights from './pages/Insights';
 import Platforms from './pages/Platforms';
 import Settings from './pages/Settings';
+import JWTDecoder from './pages/JWTDecoder';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -91,6 +92,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><Platforms /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/jwt-decoder"
+          element={
+            <ProtectedRoute>
+              <Layout><JWTDecoder /></Layout>
             </ProtectedRoute>
           }
         />
