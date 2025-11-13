@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { LTKAuthProvider } from './contexts/LTKAuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Earnings from './pages/Earnings';
@@ -9,6 +10,7 @@ import Insights from './pages/Insights';
 import Platforms from './pages/Platforms';
 import Import from './pages/Import';
 import InstagramImport from './pages/InstagramImport';
+import JWTDecoder from './pages/JWTDecoder';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -117,6 +119,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><Settings /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/jwt-decoder"
+          element={
+            <ProtectedRoute>
+              <Layout><JWTDecoder /></Layout>
             </ProtectedRoute>
           }
         />

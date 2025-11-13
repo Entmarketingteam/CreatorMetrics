@@ -17,7 +17,8 @@ import {
   LogOut,
   Lightbulb,
   Upload,
-  Instagram
+  Instagram,
+  Key
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -48,6 +49,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/platforms', icon: Link2, label: 'Platforms' },
     { path: '/import', icon: Upload, label: 'LTK Import' },
     { path: '/instagram-import', icon: Instagram, label: 'Instagram Import' },
+    { path: '/jwt-decoder', icon: Key, label: 'JWT Decoder' },
     { path: '/settings', icon: Settings, label: 'Settings' }
   ];
 
