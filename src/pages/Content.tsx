@@ -37,7 +37,6 @@ export default function Content() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -49,22 +48,8 @@ export default function Content() {
   const [sortBy, setSortBy] = useState('REVENUE');
 
   useEffect(() => {
-    checkConnection();
     loadPosts();
   }, [user]);
-
-  const checkConnection = async () => {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('platform_connections')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('platform', 'instagram')
-      .maybeSingle();
-
-    setIsConnected(!!data);
-  };
 
   const loadPosts = async () => {
     if (!user) return;
@@ -134,14 +119,12 @@ export default function Content() {
       }
 
       await loadPosts();
-      setIsConnected(true);
       setImporting(false);
       setConnecting(false);
     } catch (error) {
       console.error('Error connecting:', error);
       setImporting(false);
       setConnecting(false);
-      setIsConnected(true);
       await loadPosts();
     }
   };
@@ -326,7 +309,7 @@ Stories: ${posts.filter(p => p.post_type === 'STORY').length}
     );
   }
 
-  if (!isConnected || posts.length === 0) {
+  if (posts.length === 0) {
     return (
       <div className="space-y-4 sm:space-y-6 w-full overflow-x-hidden">
         <div>
@@ -344,7 +327,7 @@ Stories: ${posts.filter(p => p.post_type === 'STORY').length}
               <Instagram className="w-10 h-10 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              Connect Instagram to Start
+              Import Instagram Posts to Start
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-8">
               Import your posts to see which content drives the most sales and engagement.
@@ -354,7 +337,7 @@ Stories: ${posts.filter(p => p.post_type === 'STORY').length}
               onClick={() => setShowConnectModal(true)}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
             >
-              Connect Instagram
+              Import Posts
             </button>
           </div>
         </div>
