@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LTK Proxy Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>LTK Proxy Connection Test</h1>
+    
+    <h2>Environment Info</h2>
+    <pre id="env-info"></pre>
+    
+    <h2>Test Buttons</h2>
+    <button onclick="testHealth()">Test Backend Health</button>
+    <button onclick="testLTKEndpoint()">Test LTK Endpoint (No Token)</button>
+    <button onclick="testWithToken()">Test LTK Endpoint (With Token)</button>
+    
+    <h2>Results</h2>
+    <div id="results"></div>
+    
+    <script>
+        // Show environment info
+        document.getElementById('env-info').textContent = `
+Current URL: ${window.location.href}
+Origin: ${window.location.origin}
+        `;
+        
+        function log(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = isError ? 'error' : 'success';
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        async function testHealth() {
+            log('Testing /api/health...');
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                log('✅ Backend health: ' + JSON.stringify(data));
+            } catch (error) {
+                log('❌ Health check failed: ' + error.message, true);
+            }
+        }
+        
+        async function testLTKEndpoint() {
+            log('Testing /api/ltk/analytics/contributors (no token)...');
+            try {
+                const response = await fetch('/api/ltk/analytics/contributors');
+                const text = await response.text();
+                if (response.ok) {
+                    log('✅ Response: ' + text);
+                } else {
+                    log('⚠️  Expected error (no token): ' + text);
+                }
+            } catch (error) {
+                log('❌ Request failed: ' + error.message, true);
+            }
+        }
+        
+        async function testWithToken() {
+            const token = prompt('Enter your Auth0 token:');
+            if (!token) return;
+            
+            log('Testing /api/ltk/analytics/contributors (with token)...');
+            try {
+                const response = await fetch('/api/ltk/analytics/contributors', {
+                    headers: {
+                        'x-ltk-token': token
+                    }
+                });
+                const text = await response.text();
+                log(`Response (${response.status}): ` + text);
+            } catch (error) {
+                log('❌ Request failed: ' + error.message, true);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -33,6 +33,9 @@ export class LTKApiClient {
     }
 
     const url = `${PROXY_BASE}${endpoint}`;
+    console.log('[LTK Client] Making request to:', url);
+    console.log('[LTK Client] PROXY_BASE:', PROXY_BASE);
+    console.log('[LTK Client] BACKEND_URL:', import.meta.env.VITE_BACKEND_URL);
     
     const response = await fetch(url, {
       ...options,
