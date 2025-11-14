@@ -1,0 +1,54 @@
+ID Token (JWT)
+eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlR5Tmg2SXR3dUVrR1hGMTBoeHhJbyJ9.eyJodHRwOi8vc2hvcGx0ay5jb20vcHJvZmlsZSI6eyJhY2NvdW50X2lkIjoyNzg2MzIsImVtcGxveWVlIjpmYWxzZSwibGVnYWN5X3N0YXR1cyI6eyJhY2NvdW50X2FkbWluIjp0cnVlLCJhcHByb3ZlZCI6dHJ1ZSwiY29tcGxldGUiOnRydWUsInNob3dfd2Fsa21lIjp0cnVlfSwicHVibGlzaGVyX2lkIjoyOTMwNDUsInNpZ2lsX2lkIjoiOTA4NzU3ZWY3YTA2NGVhMGI2YTM5MzFkNjM1ZTQzMTgifSwiaXNzIjoiaHR0cHM6Ly9jcmVhdG9yLWF1dGguc2hvcGx0ay5jb20vIiwic3ViIjoiYXV0aDB8cnMtMjkzMDQ1IiwiYXVkIjpbImh0dHBzOi8vY3JlYXRvci1hcGktZ2F0ZXdheS5zaG9wbHRrLmNvbS9sZWdhY3kiLCJodHRwczovL3Byb2QtcnMtaW5mbHVlbmNlci51cy5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNzYzMTI3OTczLCJleHAiOjE3NjMyMjg3NzMsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwgbHRrLnB1Ymxpc2hlciIsImF6cCI6IktTZW5rQnl0bkhCaDM1aElWVW0xbTU0V0FHcExydE96In0.UdX3ooffR_UJ4JcuZZkwwA8jouNeGrlXTtUGQLjpMv4HqvxGyKkN_Qsr5dVxolPK6J2RUVAPuXaoED5CdJX0aYT8An_2dJ7aWmw0pidttJ5DBw4J9Nkc1Q2P1YcqRxpzVys1gEjPI7LlRUiLXcvG2u5M5N7seHdSxLOe8kk5Jzy3ww4uX6AH3C2G-qxrJZCG5SxGl1K9_SYdX4Ux3Hq-d2-1br8SsWeidL87oCyjHWR23oz5R0j5Nd7jbpTFnhHI0odFh01h2Nm5FodHGdN84wFqvS8FGOglLjuEQxxwv3LZyBk90pBev8H-nFy37EharlD2r0KsVNxNUqP7rreWFg
+Valid
+Expires: 11/15/2025, 11:46:13 AM
+Account ID: 278632
+Publisher ID: 293045
+Account ID
+278632
+Publisher ID
+293045
+Test All 14 LTK Endpoints
+Test Results
+Get Contributors
+162ms
+Unauthorized - token expired and no refresh handler configured
+Get Hero Chart
+96ms
+Unauthorized - token expired and no refresh handler configured
+Get Performance Summary
+102ms
+Unauthorized - token expired and no refresh handler configured
+Get Performance Stats
+96ms
+Unauthorized - token expired and no refresh handler configured
+Get Top Performers
+103ms
+Unauthorized - token expired and no refresh handler configured
+Get Items Sold
+98ms
+Unauthorized - token expired and no refresh handler configured
+Get Commissions Summary
+95ms
+Unauthorized - token expired and no refresh handler configured
+Get User
+97ms
+HTTP 404: "404 page not found\n"
+Get Account
+97ms
+HTTP 404: "404 page not found\n"
+Get Account Users
+116ms
+HTTP 404: "404 page not found\n"
+Get User Info
+95ms
+HTTP 404: "404 page not found\n"
+Get Public Profile
+95ms
+HTTP 404: "404 page not found\n"
+Get Amazon Identities
+96ms
+HTTP 404: "404 page not found\n"
+Get LTK Search Trends
+94ms
+HTTP 404: "404 page not found\n"

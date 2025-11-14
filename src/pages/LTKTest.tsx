@@ -11,7 +11,8 @@ interface TestResult {
 }
 
 export default function LTKTest() {
-  const [token, setToken] = useState('');
+  const [accessToken, setAccessToken] = useState('');
+  const [idToken, setIdToken] = useState('');
   const [accountId, setAccountId] = useState('278632');
   const [publisherId, setPublisherId] = useState('293045');
   const [results, setResults] = useState<Map<string, TestResult>>(new Map());
@@ -35,7 +36,7 @@ export default function LTKTest() {
     const startTime = performance.now();
 
     try {
-      const client = new LTKApiClient(() => token);
+      const client = new LTKApiClient(() => accessToken, () => idToken);
       const data = await testFn(client);
       const duration = performance.now() - startTime;
       
@@ -55,8 +56,8 @@ export default function LTKTest() {
   };
 
   const testAllEndpoints = async () => {
-    if (!token) {
-      alert('Please enter your Auth0 ID token first');
+    if (!accessToken || !idToken) {
+      alert('Please enter both your Access Token AND ID Token first');
       return;
     }
 
@@ -113,7 +114,7 @@ export default function LTKTest() {
     setIsTestingAll(false);
   };
 
-  const decodeToken = () => {
+  const decodeToken = (token: string) => {
     if (!token) return null;
     try {
       const parts = token.split('.');
@@ -125,8 +126,8 @@ export default function LTKTest() {
     }
   };
 
-  const tokenPayload = decodeToken();
-  const isTokenValid = tokenPayload && tokenPayload.exp > Date.now() / 1000;
+  const idTokenPayload = decodeToken(idToken);
+  const isIdTokenValid = idTokenPayload && idTokenPayload.exp > Date.now() / 1000;
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-6xl">
@@ -154,53 +155,70 @@ export default function LTKTest() {
 
       {/* Token Input */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Auth0 ID Token</h2>
+        <h2 className="text-xl font-semibold">Auth0 Tokens</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Get your token from creator.shopltk.com cookies (auth._id_token.auth0)
+          You need BOTH tokens from creator.shopltk.com cookies
         </p>
         
-        <div className="space-y-2">
-          <label htmlFor="token" className="block text-sm font-medium">
-            ID Token (JWT)
-          </label>
-          <textarea
-            id="token"
-            placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIs..."
-            value={token}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setToken(e.target.value)}
-            rows={4}
-            className="w-full px-3 py-2 border rounded-md font-mono text-sm bg-gray-50 dark:bg-gray-900 dark:border-gray-600"
-            data-testid="input-token"
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="access-token" className="block text-sm font-medium">
+              Access Token (auth._token.auth0)
+            </label>
+            <textarea
+              id="access-token"
+              placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIs..."
+              value={accessToken}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAccessToken(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border rounded-md font-mono text-sm bg-gray-50 dark:bg-gray-900 dark:border-gray-600"
+              data-testid="input-access-token"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="id-token" className="block text-sm font-medium">
+              ID Token (auth._id_token.auth0)
+            </label>
+            <textarea
+              id="id-token"
+              placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIs..."
+              value={idToken}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setIdToken(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border rounded-md font-mono text-sm bg-gray-50 dark:bg-gray-900 dark:border-gray-600"
+              data-testid="input-id-token"
+            />
+          </div>
         </div>
 
-        {tokenPayload && (
+        {idTokenPayload && (
           <div className="space-y-3 p-4 bg-gray-100 dark:bg-gray-700 rounded-md">
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-1 rounded text-xs font-medium ${isTokenValid ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
-                {isTokenValid ? 'Valid' : 'Expired'}
+              <span className={`px-2 py-1 rounded text-xs font-medium ${isIdTokenValid ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+                {isIdTokenValid ? 'Valid' : 'Expired'}
               </span>
-              {tokenPayload.exp && (
+              {idTokenPayload.exp && (
                 <span className="text-sm text-gray-600 dark:text-gray-300">
-                  Expires: {new Date(tokenPayload.exp * 1000).toLocaleString()}
+                  Expires: {new Date(idTokenPayload.exp * 1000).toLocaleString()}
                 </span>
               )}
             </div>
             
-            {tokenPayload['http://shopltk.com/profile'] && (
+            {idTokenPayload['http://shopltk.com/profile'] && (
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="font-medium">Account ID:</span>{' '}
-                  {tokenPayload['http://shopltk.com/profile'].account_id}
+                  {idTokenPayload['http://shopltk.com/profile'].account_id}
                 </div>
                 <div>
                   <span className="font-medium">Publisher ID:</span>{' '}
-                  {tokenPayload['http://shopltk.com/profile'].publisher_id}
+                  {idTokenPayload['http://shopltk.com/profile'].publisher_id}
                 </div>
-                {tokenPayload['http://shopltk.com/profile'].publisher_name && (
+                {idTokenPayload['http://shopltk.com/profile'].publisher_name && (
                   <div className="col-span-2">
                     <span className="font-medium">Name:</span>{' '}
-                    {tokenPayload['http://shopltk.com/profile'].publisher_name}
+                    {idTokenPayload['http://shopltk.com/profile'].publisher_name}
                   </div>
                 )}
               </div>
@@ -239,7 +257,7 @@ export default function LTKTest() {
 
         <button
           onClick={testAllEndpoints}
-          disabled={!token || !isTokenValid || isTestingAll}
+          disabled={!accessToken || !idToken || !isIdTokenValid || isTestingAll}
           className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           data-testid="button-test-all"
         >

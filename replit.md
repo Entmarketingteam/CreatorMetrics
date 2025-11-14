@@ -8,6 +8,30 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**November 14, 2025** - Dual-Token LTK Authentication Implemented ✅
+- **Critical Discovery**: LTK API Gateway requires TWO separate Auth0 tokens:
+  * Access Token → `Authorization: Bearer {token}` header (required by API Gateway authorizer)
+  * ID Token → `x-id-token: {token}` header (LTK-specific authentication)
+- **Backend Proxy Updated** (`server/routes/ltkProxy.ts`):
+  * All 14 endpoints now accept both `x-ltk-access-token` and `x-ltk-id-token` headers
+  * Proper header forwarding: Authorization + x-id-token to LTK API
+  * Updated error handling for missing tokens
+- **Frontend LTK Client Refactored** (`src/lib/ltkApiClient.ts`):
+  * Constructor now requires: `new LTKApiClient(getAccessToken, getIdToken)`
+  * Sends both tokens in every request
+  * Removed deprecated single-token approach
+- **LTK Test Page Enhanced** (`src/pages/LTKTest.tsx`):
+  * Two separate token input fields for Access Token and ID Token
+  * Token validation and expiration display
+  * Updated instructions for getting both tokens from browser cookies
+- **Documentation Created**:
+  * `docs/ltk-get-both-tokens.md` - Step-by-step guide with JavaScript helper
+  * Browser console script to extract both tokens from creator.shopltk.com cookies
+- **Error Resolution Journey**:
+  * "Authorization field missing" → Missing Authorization header
+  * "Key not authorised" → Using ID token in Authorization header (wrong!)
+  * Solution: Access token in Authorization, ID token in x-id-token (both required)
+
 **November 14, 2025** - Production-Ready Backend Proxy Server ✅
 - **Major Architecture Change**: Full-stack application with Express backend
 - **Backend server** (`server/index.ts`) proxies requests to `api-gateway.rewardstyle.com`

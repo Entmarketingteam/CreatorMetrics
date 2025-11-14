@@ -23,13 +23,17 @@ export interface LTKAnalyticsParams {
 }
 
 export class LTKApiClient {
-  constructor(private getToken: () => string) {}
+  constructor(
+    private getAccessToken: () => string,
+    private getIdToken: () => string
+  ) {}
 
   private async request(endpoint: string, options: RequestInit = {}) {
-    const token = this.getToken();
+    const accessToken = this.getAccessToken();
+    const idToken = this.getIdToken();
     
-    if (!token) {
-      throw new Error('No LTK token available');
+    if (!accessToken || !idToken) {
+      throw new Error('Both Access Token and ID Token are required');
     }
 
     const url = `${PROXY_BASE}${endpoint}`;
@@ -41,7 +45,8 @@ export class LTKApiClient {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'x-ltk-token': token,
+        'x-ltk-access-token': accessToken,
+        'x-ltk-id-token': idToken,
         ...options.headers,
       },
     });
