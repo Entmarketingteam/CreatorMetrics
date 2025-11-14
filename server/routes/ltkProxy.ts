@@ -229,7 +229,7 @@ router.get('/user/:publisherId', async (req: Request, res: Response) => {
     }
 
     const { publisherId } = req.params;
-    const result = await proxyLTKRequest(`/publishers/v1/users/${publisherId}`, accessToken, idToken);
+    const result = await proxyLTKRequest(`/api/creator-account-service/v1/users/${publisherId}`, accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -279,7 +279,7 @@ router.get('/user-info', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
     }
 
-    const result = await proxyLTKRequest('/publishers/v1/user', accessToken, idToken);
+    const result = await proxyLTKRequest('/api/co-api/v1/get_user_info', accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -296,7 +296,7 @@ router.get('/public-profile/:accountId', async (req: Request, res: Response) => 
     }
 
     const { accountId } = req.params;
-    const result = await proxyLTKRequest(`/publishers/v1/public/accounts/${accountId}`, accessToken, idToken);
+    const result = await proxyLTKRequest(`/api/pub/v2/profiles/?rs_account_id=${accountId}`, accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
