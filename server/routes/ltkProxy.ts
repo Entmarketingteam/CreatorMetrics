@@ -263,7 +263,7 @@ router.get('/account/:accountId/users', async (req: Request, res: Response) => {
     }
 
     const { accountId } = req.params;
-    const result = await proxyLTKRequest(`/publishers/v1/accounts/${accountId}/users`, accessToken, idToken);
+    const result = await proxyLTKRequest(`/api/creator-account-service/v1/accounts/${accountId}/users`, accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
