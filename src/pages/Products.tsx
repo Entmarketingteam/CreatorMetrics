@@ -74,7 +74,7 @@ export default function Products() {
           name: item.product_name || item.title || 'Product',
           brand: item.brand_name || item.retailer || 'Unknown Brand',
           platform: item.platform || 'LTK',
-          imageUrl: item.image_url || item.product_image || 'https://images.pexels.com/photos/1055691/pexels-photo-1055691.jpeg?auto=compress&cs=tinysrgb&w=400',
+          imageUrl: item.image_url || item.product_image || '',
           revenue: item.commissions || item.revenue || 0,
           sales: item.quantity_sold || item.sales || 0,
           clicks: item.clicks || 0,
@@ -82,7 +82,7 @@ export default function Products() {
         }));
         setProducts(items);
       } else {
-        loadMockProducts();
+        setProducts([]);
       }
 
       if (trendsRes && trendsRes.data && trendsRes.data.trends) {
@@ -93,80 +93,16 @@ export default function Products() {
         }));
         setSearchTrends(trends);
       } else {
-        setSearchTrends([
-          { keyword: 'winter coat', searches: 1240, trend: 'up' },
-          { keyword: 'leather boots', searches: 980, trend: 'up' },
-          { keyword: 'sweater dress', searches: 850, trend: 'stable' },
-        ]);
+        setSearchTrends([]);
       }
 
     } catch (error) {
       console.error('Error loading products:', error);
-      loadMockProducts();
+      setProducts([]);
+      setSearchTrends([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadMockProducts = () => {
-    const mockProducts: Product[] = [
-      {
-        id: '1',
-        name: 'All in Favor Contrast Collar Herringbone Coat',
-        brand: 'Nordstrom',
-        platform: 'LTK',
-        imageUrl: 'https://images.pexels.com/photos/1055691/pexels-photo-1055691.jpeg?auto=compress&cs=tinysrgb&w=400',
-        revenue: 112.35,
-        sales: 13,
-        clicks: 308,
-        conversionRate: 4.2,
-      },
-      {
-        id: '2',
-        name: "Women's Off-The-Shoulder Twist Top",
-        brand: 'Abercrombie & Fitch',
-        platform: 'Amazon',
-        imageUrl: 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=400',
-        revenue: 87.20,
-        sales: 9,
-        clicks: 245,
-        conversionRate: 3.7,
-      },
-      {
-        id: '3',
-        name: 'Oversized Denim Jacket',
-        brand: 'Zara',
-        platform: 'LTK',
-        imageUrl: 'https://images.pexels.com/photos/1124468/pexels-photo-1124468.jpeg?auto=compress&cs=tinysrgb&w=400',
-        revenue: 95.50,
-        sales: 11,
-        clicks: 280,
-        conversionRate: 3.9,
-      },
-      {
-        id: '4',
-        name: 'Leather Ankle Boots',
-        brand: 'Steve Madden',
-        platform: 'Walmart',
-        imageUrl: 'https://images.pexels.com/photos/336372/pexels-photo-336372.jpeg?auto=compress&cs=tinysrgb&w=400',
-        revenue: 125.80,
-        sales: 15,
-        clicks: 340,
-        conversionRate: 4.4,
-      },
-      {
-        id: '5',
-        name: 'Cashmere Sweater',
-        brand: 'J.Crew',
-        platform: 'ShopStyle',
-        imageUrl: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=400',
-        revenue: 98.60,
-        sales: 12,
-        clicks: 295,
-        conversionRate: 4.1,
-      },
-    ];
-    setProducts(mockProducts);
   };
 
   const filteredAndSortedProducts = useMemo(() => {
@@ -306,12 +242,19 @@ export default function Products() {
                   data-testid={`card-product-${index}`}
                 >
                   <div className="flex gap-4">
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.name}
-                      className="w-20 h-20 object-cover rounded-md"
-                      data-testid={`img-product-${index}`}
-                    />
+                    {product.imageUrl && (
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name}
+                        className="w-20 h-20 object-cover rounded-md"
+                        data-testid={`img-product-${index}`}
+                      />
+                    )}
+                    {!product.imageUrl && (
+                      <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center">
+                        <Package className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                         {product.name}
@@ -361,7 +304,10 @@ export default function Products() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Search Trends</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Popular product searches</p>
             <div className="space-y-3">
-              {searchTrends.map((trend, index) => (
+              {searchTrends.length === 0 ? (
+                <p className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">No search trends available</p>
+              ) : (
+                searchTrends.map((trend, index) => (
                 <div 
                   key={index}
                   className="flex items-center justify-between gap-3 p-3 rounded-md bg-gray-50 dark:bg-gray-700/50"
@@ -387,7 +333,8 @@ export default function Products() {
                     )}
                   </div>
                 </div>
-              ))}
+              )))
+              }
             </div>
           </div>
         </div>

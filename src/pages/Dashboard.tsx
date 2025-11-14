@@ -124,24 +124,10 @@ export default function Dashboard() {
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      setStats({
-        revenue: 1847.52,
-        clicks: 3420,
-        sales: 142,
-        conversionRate: 4.15,
-      });
-      setTopPerformers([
-        { id: '1', name: 'Contrast Collar Coat', revenue: 112.35, clicks: 308, platform: 'LTK' },
-        { id: '2', name: 'Off-Shoulder Top', revenue: 87.20, clicks: 245, platform: 'Amazon' },
-        { id: '3', name: 'Denim Jacket', revenue: 95.50, clicks: 280, platform: 'LTK' },
-      ]);
-      setCommissionSummary({ pending: 847.52, paid: 1000.00, total: 1847.52 });
-      setChartData([
-        { date: 'Nov 1', revenue: 245, clicks: 520 },
-        { date: 'Nov 5', revenue: 380, clicks: 680 },
-        { date: 'Nov 10', revenue: 520, clicks: 820 },
-        { date: 'Nov 14', revenue: 702, clicks: 1400 },
-      ]);
+      setStats(null);
+      setTopPerformers([]);
+      setCommissionSummary(null);
+      setChartData([]);
     } finally {
       setLoading(false);
     }
