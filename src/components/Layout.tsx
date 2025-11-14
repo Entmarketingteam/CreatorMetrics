@@ -50,6 +50,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/import', icon: Upload, label: 'LTK Import' },
     { path: '/instagram-import', icon: Instagram, label: 'Instagram Import' },
     { path: '/jwt-decoder', icon: Key, label: 'JWT Decoder' },
+    { path: '/ltk-test', icon: BarChart3, label: 'LTK Test' },
     { path: '/settings', icon: Settings, label: 'Settings' }
   ];
 

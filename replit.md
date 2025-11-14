@@ -8,6 +8,22 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+**November 14, 2025** - LTK Test Page Created
+- Created `/ltk-test` page for testing all 14 LTK API endpoints with real Auth0 tokens
+- Features:
+  * Token input with automatic JWT decoding and validation
+  * Visual token expiration status (valid/expired)
+  * Account ID and Publisher ID extraction from token
+  * One-click testing of all 14 endpoints with progress indicators
+  * Real-time success/error feedback with response times
+  * JSON response viewer with copy-to-clipboard functionality
+  * Instructions for extracting token from browser cookies
+- Integration approach confirmed: Browser-side API calls required due to CORS restrictions
+  * LTK API rejects server-side calls (must originate from creator.shopltk.com domain)
+  * CreatorMetrics browser makes successful API calls with proper CORS headers
+- Added "LTK Test" to sidebar navigation
+- Next step: User can test with real token to verify all endpoints work
+
 **November 13, 2025** - LTK API Discovery & Integration
 - Analyzed LTK HAR files (performance analytics, homepage, earnings pages)
 - Discovered LTK uses Auth0 for authentication (not custom OAuth)

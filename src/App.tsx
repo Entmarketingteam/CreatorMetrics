@@ -11,6 +11,7 @@ import Platforms from './pages/Platforms';
 import Import from './pages/Import';
 import InstagramImport from './pages/InstagramImport';
 import JWTDecoder from './pages/JWTDecoder';
+import LTKTest from './pages/LTKTest';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -127,6 +128,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><JWTDecoder /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ltk-test"
+          element={
+            <ProtectedRoute>
+              <Layout><LTKTest /></Layout>
             </ProtectedRoute>
           }
         />
