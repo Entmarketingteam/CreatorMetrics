@@ -141,17 +141,73 @@ function matchByKeywords(igPost: InstagramPost, ltkPosts: LTKPost[]): LTKPost | 
   let bestScore = 0;
   
   for (const ltkPost of ltkPosts) {
-    // For now, we'll just use time-based matching since we don't have product keywords in LTK data yet
-    // This can be enhanced when we have product title/description from LTK
-    const score = 0;
+    // Calculate keyword overlap score
+    let ltkWords: string[] = [];
     
-    if (score > bestScore && score > 0.3) { // Require at least 30% similarity
+    // Extract words from LTK permalink if available
+    if (ltkPost.permalink) {
+      ltkWords = extractURLKeywords(ltkPost.permalink);
+    }
+    
+    // If we have metadata with product info, extract those too
+    // This would be enhanced with actual product titles/descriptions from LTK API
+    
+    if (ltkWords.length === 0) continue;
+    
+    // Calculate Jaccard similarity (intersection over union)
+    const igSet = new Set(igWords);
+    const ltkSet = new Set(ltkWords);
+    const intersection = new Set([...igSet].filter(x => ltkSet.has(x)));
+    const union = new Set([...igSet, ...ltkSet]);
+    
+    const score = intersection.size / union.size;
+    
+    if (score > bestScore && score > 0.2) { // Lowered threshold to 20% for better recall
       bestScore = score;
       bestMatch = ltkPost;
     }
   }
   
   return bestMatch;
+}
+
+/**
+ * Extract meaningful keywords from LTK permalink URLs
+ */
+function extractURLKeywords(urlString: string): string[] {
+  try {
+    // Try parsing as URL
+    let pathSegments: string[] = [];
+    
+    if (urlString.startsWith('http://') || urlString.startsWith('https://')) {
+      const url = new URL(urlString);
+      // Extract path segments (e.g., /shop/nike-sneakers → ['shop', 'nike', 'sneakers'])
+      pathSegments = url.pathname.split('/').filter(Boolean);
+    } else {
+      // Handle slug-only strings (e.g., "ltk-12345" or "shop/summer-dress")
+      pathSegments = urlString.split('/').filter(Boolean);
+    }
+    
+    // Extract words from each segment
+    let words: string[] = [];
+    for (const segment of pathSegments) {
+      // Split on hyphens, underscores, camelCase
+      const segmentWords = segment
+        .replace(/([a-z])([A-Z])/g, '$1 $2') // Split camelCase
+        .split(/[-_\s]+/) // Split on hyphens, underscores, spaces
+        .map(w => w.toLowerCase())
+        .filter(w => w.length >= 3); // Only keep words 3+ chars
+      
+      words = words.concat(segmentWords);
+    }
+    
+    // Remove common URL words
+    const stopWords = new Set(['shop', 'ltk', 'www', 'com', 'http', 'https', 'index', 'page']);
+    return words.filter(w => !stopWords.has(w));
+  } catch (err) {
+    // If parsing fails, just extract keywords normally
+    return extractKeywords(urlString);
+  }
 }
 
 function extractKeywords(text: string): string[] {

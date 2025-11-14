@@ -45,7 +45,7 @@ export default function ContentAnalytics() {
         .select('*')
         .eq('user_id', user.id)
         .eq('platform', 'INSTAGRAM')
-        .gte('posted_at', () => startDate.toISOString())
+        .gte('posted_at', startDate.toISOString())
         .order('posted_at', { ascending: false });
 
       if (error) {
