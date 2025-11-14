@@ -18,6 +18,8 @@ I discovered that the LTK API requires **TWO separate tokens** (not just one!). 
 
 ### Step 1: Get Your Tokens
 
+#### Option A: JavaScript Console (Fastest)
+
 1. Go to https://creator.shopltk.com and log in
 2. Press **F12** to open Developer Tools
 3. Click on the **Console** tab
@@ -49,6 +51,21 @@ console.log('\n✅ Both tokens copied to clipboard!');
 
 5. You'll see both tokens printed in the console
 6. They're also automatically copied to your clipboard!
+
+#### Option B: Manual Method (If Script Shows "undefined")
+
+If the script says "NOT FOUND", use the manual method:
+
+1. Stay on https://creator.shopltk.com (must be logged in)
+2. Open DevTools (F12)
+3. Go to **Application** tab (Chrome) or **Storage** tab (Firefox)
+4. In left sidebar, expand **Cookies**
+5. Click **https://creator.shopltk.com**
+6. Find these two cookies and copy their **Value**:
+   - `auth._token.auth0` → This is your **Access Token**
+   - `auth._id_token.auth0` → This is your **ID Token**
+
+**Can't find the cookies?** See `docs/ltk-debug-cookies.md` for advanced debugging.
 
 ### Step 2: Test in CreatorMetrics
 

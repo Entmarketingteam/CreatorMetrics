@@ -26,27 +26,63 @@ Click on the **Console** tab in DevTools.
 Copy and paste the following code into the console:
 
 ```javascript
-// Get both tokens from cookies
+// Get both tokens from cookies (improved version)
 const cookies = document.cookie.split('; ');
 
-const accessToken = cookies
-  .find(row => row.startsWith('auth._token.auth0='))
-  ?.split('=')[1];
+console.log('=== SEARCHING FOR LTK AUTH TOKENS ===\n');
 
-const idToken = cookies
-  .find(row => row.startsWith('auth._id_token.auth0='))
-  ?.split('=')[1];
+// Try multiple possible cookie names
+const possibleAccessTokenNames = [
+  'auth._token.auth0',
+  'auth.token.auth0',
+  '_token.auth0'
+];
 
-console.log('=== LTK AUTH TOKENS ===');
-console.log('\nAccess Token (auth._token.auth0):');
-console.log(accessToken || 'NOT FOUND');
-console.log('\nID Token (auth._id_token.auth0):');
-console.log(idToken || 'NOT FOUND');
-console.log('\n=======================');
+const possibleIdTokenNames = [
+  'auth._id_token.auth0',
+  'auth.id_token.auth0',
+  '_id_token.auth0'
+];
 
-// Copy both tokens to clipboard as JSON
-navigator.clipboard.writeText(JSON.stringify({ accessToken, idToken }, null, 2));
-console.log('\n✅ Both tokens copied to clipboard!');
+let accessToken = null;
+let idToken = null;
+
+// Search for access token
+for (const name of possibleAccessTokenNames) {
+  const cookie = cookies.find(row => row.startsWith(name + '='));
+  if (cookie) {
+    accessToken = cookie.split('=')[1];
+    console.log('✅ Found Access Token in cookie:', name);
+    break;
+  }
+}
+
+// Search for ID token
+for (const name of possibleIdTokenNames) {
+  const cookie = cookies.find(row => row.startsWith(name + '='));
+  if (cookie) {
+    idToken = cookie.split('=')[1];
+    console.log('✅ Found ID Token in cookie:', name);
+    break;
+  }
+}
+
+console.log('\n=== RESULTS ===\n');
+
+if (accessToken && idToken) {
+  console.log('Access Token:', accessToken);
+  console.log('\nID Token:', idToken);
+  
+  // Copy to clipboard
+  navigator.clipboard.writeText(JSON.stringify({ accessToken, idToken }, null, 2));
+  console.log('\n✅ Both tokens copied to clipboard!');
+} else {
+  console.log('❌ PROBLEM:');
+  if (!accessToken) console.log('  - Access Token NOT found');
+  if (!idToken) console.log('  - ID Token NOT found');
+  console.log('\n📋 All cookies:', cookies);
+  console.log('\n💡 Try the manual method in docs/ltk-debug-cookies.md');
+}
 ```
 
 ### 5. Copy the Tokens
