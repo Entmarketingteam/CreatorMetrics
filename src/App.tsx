@@ -132,11 +132,7 @@ function App() {
         />
         <Route
           path="/ltk-test"
-          element={
-            <ProtectedRoute>
-              <Layout><LTKTest /></Layout>
-            </ProtectedRoute>
-          }
+          element={<LTKTest />}
         />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
