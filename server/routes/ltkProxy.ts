@@ -339,4 +339,84 @@ router.get('/search-trends', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Content & Product Endpoints
+ */
+
+// GET /api/ltk/favorites
+router.get('/favorites', async (req: Request, res: Response) => {
+  try {
+    const accessToken = req.headers['x-ltk-access-token'] as string;
+    const idToken = req.headers['x-ltk-id-token'] as string;
+    if (!accessToken || !idToken) {
+      return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
+    }
+
+    const queryParams = new URLSearchParams(req.query as any).toString();
+    const endpoint = `/api/pub/v1/favorites/${queryParams ? `?${queryParams}` : ''}`;
+    
+    const result = await proxyLTKRequest(endpoint, accessToken, idToken);
+    res.status(result.status).json(result.data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ltk/folders
+router.get('/folders', async (req: Request, res: Response) => {
+  try {
+    const accessToken = req.headers['x-ltk-access-token'] as string;
+    const idToken = req.headers['x-ltk-id-token'] as string;
+    if (!accessToken || !idToken) {
+      return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
+    }
+
+    const queryParams = new URLSearchParams(req.query as any).toString();
+    const endpoint = `/api/pub/v1/folders/${queryParams ? `?${queryParams}` : ''}`;
+    
+    const result = await proxyLTKRequest(endpoint, accessToken, idToken);
+    res.status(result.status).json(result.data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ltk/product-info
+router.get('/product-info', async (req: Request, res: Response) => {
+  try {
+    const accessToken = req.headers['x-ltk-access-token'] as string;
+    const idToken = req.headers['x-ltk-id-token'] as string;
+    if (!accessToken || !idToken) {
+      return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
+    }
+
+    const queryParams = new URLSearchParams(req.query as any).toString();
+    const endpoint = `/api/co-api/v1/get_products_info${queryParams ? `?${queryParams}` : ''}`;
+    
+    const result = await proxyLTKRequest(endpoint, accessToken, idToken);
+    res.status(result.status).json(result.data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ltk/product-reviews
+router.get('/product-reviews', async (req: Request, res: Response) => {
+  try {
+    const accessToken = req.headers['x-ltk-access-token'] as string;
+    const idToken = req.headers['x-ltk-id-token'] as string;
+    if (!accessToken || !idToken) {
+      return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
+    }
+
+    const queryParams = new URLSearchParams(req.query as any).toString();
+    const endpoint = `/api/pub/v1/product_reviews/${queryParams ? `?${queryParams}` : ''}`;
+    
+    const result = await proxyLTKRequest(endpoint, accessToken, idToken);
+    res.status(result.status).json(result.data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
