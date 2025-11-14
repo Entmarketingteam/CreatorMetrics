@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Earnings from './pages/Earnings';
 import Products from './pages/Products';
 import Content from './pages/Content';
+import ContentAnalytics from './pages/ContentAnalytics';
 import Insights from './pages/Insights';
 import Platforms from './pages/Platforms';
 import Import from './pages/Import';
@@ -79,6 +80,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><Content /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/content-analytics"
+          element={
+            <ProtectedRoute>
+              <Layout><ContentAnalytics /></Layout>
             </ProtectedRoute>
           }
         />
