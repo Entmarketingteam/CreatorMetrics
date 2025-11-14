@@ -88,7 +88,7 @@ export class LTKApiClient {
     return this.request(`/analytics/top-performers?${query}`);
   }
 
-  async getItemsSold(params: { limit?: number; offset?: number; status?: string } = {}) {
+  async getItemsSold(params: { limit?: number; next?: string; start?: string; end?: string; currency?: string } = {}) {
     const query = new URLSearchParams(params as any).toString();
     return this.request(`/analytics/items-sold?${query}`);
   }
@@ -125,5 +125,41 @@ export class LTKApiClient {
 
   async getLTKSearchTrends() {
     return this.request('/search-trends');
+  }
+
+  async getTopPerformersAdvertisers(params: LTKAnalyticsParams) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/top-performers/advertisers?${query}`);
+  }
+
+  async getTopPerformersLinks(params: LTKAnalyticsParams) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/top-performers/links?${query}`);
+  }
+
+  async getTopPerformersLTKs(params: LTKAnalyticsParams) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/top-performers/ltks?${query}`);
+  }
+
+  // Content & Product Endpoints
+  async getFavorites(params: { limit?: number; sort?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/favorites${query ? `?${query}` : ''}`);
+  }
+
+  async getFolders(params: Record<string, any> = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/folders${query ? `?${query}` : ''}`);
+  }
+
+  async getProductInfo(params: { product_ids?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/product-info${query ? `?${query}` : ''}`);
+  }
+
+  async getProductReviews(params: Record<string, any> = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/product-reviews${query ? `?${query}` : ''}`);
   }
 }

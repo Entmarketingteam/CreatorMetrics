@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LTKApiClient } from '../lib/ltkApiClient';
-import { Loader2, CheckCircle2, XCircle, Copy } from 'lucide-react';
+import { useLTKAuth } from '../hooks/useLTKAuth';
+import { Loader2, CheckCircle2, XCircle, Copy, Save } from 'lucide-react';
 
 interface TestResult {
   endpoint: string;
@@ -11,12 +12,22 @@ interface TestResult {
 }
 
 export default function LTKTest() {
+  const { tokens, saveTokens, clearTokens } = useLTKAuth();
   const [accessToken, setAccessToken] = useState('');
   const [idToken, setIdToken] = useState('');
   const [accountId, setAccountId] = useState('278632');
   const [publisherId, setPublisherId] = useState('293045');
   const [results, setResults] = useState<Map<string, TestResult>>(new Map());
   const [isTestingAll, setIsTestingAll] = useState(false);
+  const [tokensSaved, setTokensSaved] = useState(false);
+
+  useEffect(() => {
+    if (tokens) {
+      setAccessToken(tokens.accessToken);
+      setIdToken(tokens.idToken);
+      setTokensSaved(true);
+    }
+  }, [tokens]);
 
   const updateResult = (key: string, result: Partial<TestResult>) => {
     setResults(prev => new Map(prev).set(key, { ...prev.get(key), ...result } as TestResult));
@@ -253,6 +264,40 @@ export default function LTKTest() {
               data-testid="input-publisher-id"
             />
           </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              if (accessToken && idToken) {
+                saveTokens({ accessToken, idToken });
+                setTokensSaved(true);
+                alert('Tokens saved! You can now use the Earnings page.');
+              } else {
+                alert('Please enter both tokens first');
+              }
+            }}
+            disabled={!accessToken || !idToken}
+            className="flex-1 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+            data-testid="button-save-tokens"
+          >
+            <Save className="w-4 h-4" />
+            {tokensSaved ? 'Tokens Saved ✓' : 'Save Tokens'}
+          </button>
+          
+          {tokensSaved && (
+            <button
+              onClick={() => {
+                clearTokens();
+                setTokensSaved(false);
+                alert('Tokens cleared');
+              }}
+              className="px-4 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium"
+              data-testid="button-clear-tokens"
+            >
+              Clear
+            </button>
+          )}
         </div>
 
         <button

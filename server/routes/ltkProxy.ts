@@ -332,7 +332,58 @@ router.get('/search-trends', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
     }
 
-    const result = await proxyLTKRequest('/search/v1/trends', accessToken, idToken);
+    const result = await proxyLTKRequest('/api/ltk/v2/ltk_search_trends/', accessToken, idToken);
+    res.status(result.status).json(result.data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ltk/top-performers/advertisers
+router.get('/top-performers/advertisers', async (req: Request, res: Response) => {
+  try {
+    const accessToken = req.headers['x-ltk-access-token'] as string;
+    const idToken = req.headers['x-ltk-id-token'] as string;
+    if (!accessToken || !idToken) {
+      return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
+    }
+
+    const queryParams = new URLSearchParams(req.query as any).toString();
+    const result = await proxyLTKRequest(`/analytics/top_performers/advertisers${queryParams ? `?${queryParams}` : ''}`, accessToken, idToken);
+    res.status(result.status).json(result.data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ltk/top-performers/links
+router.get('/top-performers/links', async (req: Request, res: Response) => {
+  try {
+    const accessToken = req.headers['x-ltk-access-token'] as string;
+    const idToken = req.headers['x-ltk-id-token'] as string;
+    if (!accessToken || !idToken) {
+      return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
+    }
+
+    const queryParams = new URLSearchParams(req.query as any).toString();
+    const result = await proxyLTKRequest(`/analytics/top_performers/links${queryParams ? `?${queryParams}` : ''}`, accessToken, idToken);
+    res.status(result.status).json(result.data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/ltk/top-performers/ltks
+router.get('/top-performers/ltks', async (req: Request, res: Response) => {
+  try {
+    const accessToken = req.headers['x-ltk-access-token'] as string;
+    const idToken = req.headers['x-ltk-id-token'] as string;
+    if (!accessToken || !idToken) {
+      return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
+    }
+
+    const queryParams = new URLSearchParams(req.query as any).toString();
+    const result = await proxyLTKRequest(`/analytics/top_performers/ltks${queryParams ? `?${queryParams}` : ''}`, accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Search, Download, Calendar } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useLTKAuth } from '../hooks/useLTKAuth';
 import { PeriodToggle } from '../components/ui/PeriodToggle';
 
 type Period = '7D' | '30D' | '1Y';
@@ -18,102 +17,69 @@ interface Sale {
   platform: string;
   product: string;
   brand: string;
-  type: string;
   status: string;
   amount: number;
+  imageUrl?: string;
 }
 
 const ITEMS_PER_PAGE = 20;
 
 export default function Earnings() {
-  const { user } = useAuth();
+  const { isAuthenticated, createClient, isLoading: authLoading } = useLTKAuth();
   const [period, setPeriod] = useState<Period>('30D');
   const [searchTerm, setSearchTerm] = useState('');
   const [platformFilter, setPlatformFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadSales();
-  }, [user, period]);
-
-  const loadSales = async () => {
-    if (!user) {
-      loadMockSales();
-      return;
+    if (!authLoading && isAuthenticated) {
+      loadLTKSales();
     }
+  }, [isAuthenticated, authLoading, period]);
+
+  const loadLTKSales = async () => {
+    const client = createClient();
+    if (!client) return;
 
     try {
       setLoading(true);
+
       const daysAgo = period === '7D' ? 7 : period === '30D' ? 30 : 365;
+      const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysAgo);
 
-      const { data, error } = await supabase
-        .from('sales')
-        .select('*')
-        .gte('sale_date', startDate.toISOString())
-        .order('sale_date', { ascending: false });
+      const response = await client.getItemsSold({
+        limit: 100,
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+      });
 
-      if (error) throw error;
+      console.log('LTK Items Sold Response:', response);
 
-      const formattedSales: Sale[] = (data || []).map((sale: any) => ({
-        id: sale.id,
-        date: sale.sale_date,
-        platform: sale.platform || 'LTK',
-        product: sale.product_name || 'Unknown Product',
-        brand: sale.brand || 'Unknown Brand',
-        type: sale.sale_type || 'Commission',
-        status: sale.status || 'OPEN',
-        amount: sale.commission_amount || 0,
+      const items = response.items || response.data || [];
+      
+      const formattedSales: Sale[] = items.map((item: any, index: number) => ({
+        id: item.id || item.orderNumber || `sale-${index}`,
+        date: item.soldAt || item.orderDate || item.createdAt || new Date().toISOString(),
+        platform: 'LTK',
+        product: item.productTitle || item.name || item.description || 'Unknown Product',
+        brand: item.retailerName || item.brand || item.merchant || 'Unknown Brand',
+        status: item.status || 'OPEN',
+        amount: parseFloat(item.totalCommission || item.commission || item.amount || 0),
+        imageUrl: item.productImage || item.imageUrl || item.thumbnailUrl,
       }));
 
       setSales(formattedSales);
-    } catch (error) {
-      console.error('Error loading sales:', error);
-      loadMockSales();
+    } catch (err: any) {
+      console.error('Error loading LTK sales:', err);
+      setSales([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadMockSales = () => {
-    const mockSales: Sale[] = [
-      {
-        id: '1',
-        date: '2024-11-10',
-        platform: 'LTK',
-        product: 'All in Favor Contrast Collar Herringbone Coat',
-        brand: 'Nordstrom',
-        type: 'Commission',
-        status: 'PAID',
-        amount: 8.64,
-      },
-      {
-        id: '2',
-        date: '2024-11-09',
-        platform: 'Amazon',
-        product: "Women's Off-The-Shoulder Twist Top",
-        brand: 'Abercrombie & Fitch',
-        type: 'Commission',
-        status: 'PENDING',
-        amount: 7.35,
-      },
-      {
-        id: '3',
-        date: '2024-11-08',
-        platform: 'LTK',
-        product: 'Oversized Denim Jacket',
-        brand: 'Zara',
-        type: 'Commission',
-        status: 'OPEN',
-        amount: 12.50,
-      },
-    ];
-    setSales(mockSales);
-    setLoading(false);
   };
 
   const filteredSales = useMemo(() => {
@@ -134,14 +100,14 @@ export default function Earnings() {
 
   const totalEarnings = filteredSales.reduce((sum, sale) => sum + sale.amount, 0);
   const paidEarnings = filteredSales.filter(s => s.status === 'PAID').reduce((sum, sale) => sum + sale.amount, 0);
-  const pendingEarnings = filteredSales.filter(s => s.status === 'PENDING').reduce((sum, sale) => sum + sale.amount, 0);
+  const pendingEarnings = filteredSales.filter(s => s.status === 'PENDING' || s.status === 'OPEN').reduce((sum, sale) => sum + sale.amount, 0);
 
   const exportToCSV = () => {
-    const headers = ['Date', 'Platform', 'Product', 'Brand', 'Type', 'Status', 'Amount'];
+    const headers = ['Date', 'Platform', 'Product', 'Brand', 'Status', 'Amount'];
     const csvData = [
       headers.join(','),
       ...filteredSales.map(sale =>
-        [sale.date, sale.platform, `"${sale.product}"`, sale.brand, sale.type, sale.status, sale.amount].join(',')
+        [sale.date, sale.platform, `"${sale.product}"`, sale.brand, sale.status, sale.amount].join(',')
       )
     ].join('\n');
 
@@ -172,13 +138,39 @@ export default function Earnings() {
     return colors[status as keyof typeof colors] || colors.OPEN;
   };
 
+  if (authLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="bg-card rounded-lg p-6 border border-border text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="bg-card rounded-lg p-6 border border-border text-center space-y-4">
+          <h2 className="text-h2 font-bold text-foreground">Connect Your LTK Account</h2>
+          <p className="text-body text-muted-foreground">
+            You need to connect your LTK account to view your earnings data.
+          </p>
+          <a href="/ltk-test" className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md hover-elevate active-elevate-2">
+            Connect LTK Account
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4 w-full">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header with Period Toggle */}
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-h1 font-bold text-foreground">Earnings</h1>
-          <p className="text-body text-muted-foreground mt-1">Track commission earnings</p>
+          <p className="text-body text-muted-foreground mt-1">Track commission earnings from LTK</p>
         </div>
         <PeriodToggle periods={PERIODS} selected={period} onChange={(val) => setPeriod(val as Period)} />
       </div>
@@ -303,9 +295,6 @@ export default function Earnings() {
                 <div className="text-right">
                   <div className="text-h3 font-bold text-foreground">
                     ${sale.amount.toFixed(2)}
-                  </div>
-                  <div className="text-caption text-muted-foreground">
-                    {sale.type}
                   </div>
                 </div>
               </div>
