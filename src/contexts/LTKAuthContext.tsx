@@ -49,8 +49,13 @@ export function LTKAuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Update state every second to reflect expiration countdown
+  // Update state every second to reflect expiration countdown (only when tokens exist)
   useEffect(() => {
+    // Only run interval if we have tokens to avoid unnecessary JWT decode errors
+    if (!authState.tokens) {
+      return;
+    }
+
     const interval = setInterval(() => {
       const newState = ltkAuthService.getAuthState();
       if (newState.expiresIn !== authState.expiresIn) {
@@ -59,7 +64,7 @@ export function LTKAuthProvider({ children }: { children: ReactNode }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [authState.expiresIn]);
+  }, [authState.expiresIn, authState.tokens]);
 
   const refreshToken = async () => {
     try {

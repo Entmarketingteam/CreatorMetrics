@@ -95,7 +95,7 @@ export class LTKAuthService {
     try {
       return jwtDecode<LTKTokenPayload>(accessToken);
     } catch (error) {
-      console.error('Failed to decode JWT token:', error);
+      // Silently handle invalid tokens - they may not exist or be malformed
       return null;
     }
   }
