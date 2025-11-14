@@ -8,21 +8,24 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
-**November 14, 2025** - LTK Test Page Created
+**November 14, 2025** - LTK API CORS Limitation Discovered
 - Created `/ltk-test` page for testing all 14 LTK API endpoints with real Auth0 tokens
-- Features:
-  * Token input with automatic JWT decoding and validation
-  * Visual token expiration status (valid/expired)
-  * Account ID and Publisher ID extraction from token
-  * One-click testing of all 14 endpoints with progress indicators
-  * Real-time success/error feedback with response times
-  * JSON response viewer with copy-to-clipboard functionality
-  * Instructions for extracting token from browser cookies
-- Integration approach confirmed: Browser-side API calls required due to CORS restrictions
-  * LTK API rejects server-side calls (must originate from creator.shopltk.com domain)
-  * CreatorMetrics browser makes successful API calls with proper CORS headers
-- Added "LTK Test" to sidebar navigation
-- Next step: User can test with real token to verify all endpoints work
+- **Critical Discovery**: LTK API has strict CORS restrictions
+  * API only accepts requests from `creator.shopltk.com` domain
+  * Direct browser calls from CreatorMetrics are blocked by CORS policy
+  * This is a security feature to prevent unauthorized third-party access
+- **Current Solution**: CSV Import (already implemented)
+  * `/import` page for LTK earnings exports (working)
+  * `/instagram-import` page for Meta Business Suite exports (working)
+  * Users maintain full control of their data
+  * No legal/ToS concerns
+- **Future Options Documented**:
+  * Option 1: CSV Import (current, recommended) ✅
+  * Option 2: Browser Extension (legal concerns) ❌
+  * Option 3: Backend Proxy (requires architecture change)
+  * Option 4: Official LTK Partnership (long-term consideration)
+- Documentation created: `docs/ltk-integration-limitations.md`
+- LTK Test page remains useful for understanding token structure and API schema
 
 **November 13, 2025** - LTK API Discovery & Integration
 - Analyzed LTK HAR files (performance analytics, homepage, earnings pages)

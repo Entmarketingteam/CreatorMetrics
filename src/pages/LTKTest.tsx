@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LTKApiClient } from '../lib/ltkApiClient';
-import { Loader2, CheckCircle2, XCircle, Copy } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Copy, AlertTriangle, FileUp, ExternalLink } from 'lucide-react';
 
 interface TestResult {
   endpoint: string;
@@ -130,10 +130,45 @@ export default function LTKTest() {
 
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-6xl">
+      {/* CORS Limitation Notice */}
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+        <div className="flex gap-3">
+          <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
+              ⚠️ LTK API CORS Restriction
+            </h3>
+            <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
+              LTK's API only accepts requests from creator.shopltk.com domain. Direct browser calls from CreatorMetrics are blocked by CORS policy for security reasons. <strong>Use CSV import instead</strong> for your LTK data.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <a
+                href="/import"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-600 text-white rounded-md hover:bg-teal-700 text-sm font-medium"
+                data-testid="link-import"
+              >
+                <FileUp className="w-4 h-4" />
+                Go to CSV Import
+              </a>
+              <a
+                href="https://creator.shopltk.com/analytics/earnings"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 text-sm font-medium"
+                data-testid="link-ltk-export"
+              >
+                Export from LTK
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div>
-        <h1 className="text-3xl font-bold mb-2">LTK API Test</h1>
+        <h1 className="text-3xl font-bold mb-2">LTK Token Decoder</h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Test all 14 LTK API endpoints with your Auth0 token
+          Decode your LTK Auth0 token to view account details (API testing disabled due to CORS)
         </p>
       </div>
 
@@ -222,21 +257,26 @@ export default function LTKTest() {
           </div>
         </div>
 
-        <button
-          onClick={testAllEndpoints}
-          disabled={!token || !isTokenValid || isTestingAll}
-          className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          data-testid="button-test-all"
-        >
-          {isTestingAll ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Testing All Endpoints...
-            </>
-          ) : (
-            'Test All Endpoints'
-          )}
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={testAllEndpoints}
+            disabled={!token || !isTokenValid || isTestingAll}
+            className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            data-testid="button-test-all"
+          >
+            {isTestingAll ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Testing All Endpoints...
+              </>
+            ) : (
+              'Test All Endpoints (Will Fail Due to CORS)'
+            )}
+          </button>
+          <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+            This test will fail due to CORS restrictions. Use CSV import instead.
+          </p>
+        </div>
       </div>
 
       {/* Results */}
