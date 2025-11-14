@@ -1,0 +1,306 @@
+Get Contributors
+247ms
+HTTP 404: {"status":404,"error_code":"not-found","developer_message":"Not Found"}
+Get Hero Chart
+103ms
+HTTP 400: {"status":400,"error_code":"bad-request","developer_message":"invalid value for 'start': please use RFC3339 format ('2006-01-02T15:04:05Z07:00'): parsing time \"\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"\" as \"2006\""}
+Get Performance Summary
+125ms
+Response:
+Copy
+{
+  "data": {
+    "clicks": 3534,
+    "currency": "USD",
+    "items_sold": 219,
+    "items_sold_conversion_rate": 0.07156862745098039,
+    "last_updated_timestamp": "2025-11-14T15:49:55Z",
+    "locale": "en_US",
+    "net_commissions": 688.338,
+    "order_conversion_rate": 0.029411764705882353,
+    "orders": 90
+  },
+  "meta": {
+    "start_date": "2025-10-01 00:00:00+07:00",
+    "end_date": "2025-10-07 23:59:59+07:00",
+    "platform": "rs,ltk",
+    "publisher_ids": "293045"
+  }
+}
+Get Performance Stats
+304ms
+Response:
+Copy
+{
+  "performance_stats": {
+    "publisher_id": 293045,
+    "clicks": 3534,
+    "commission": 688.34,
+    "orders": 90,
+    "items_sold": 219,
+    "followers": 54,
+    "post_impressions": 98115,
+    "payment_due": 1.44,
+    "last_updated_timestamp": "2025-11-14T15:49:56Z",
+    "currency": "USD",
+    "profile_visits": 1764,
+    "post_visits": 4386,
+    "video_views": 11008,
+    "overview_visits": 6150,
+    "visits": 4386
+  },
+  "meta": {
+    "currency": "USD"
+  }
+}
+Get Top Performers
+100ms
+HTTP 404: {"status":404,"error_code":"not-found","developer_message":"Not Found"}
+Get Items Sold
+202ms
+Response:
+Copy
+{
+  "items_sold": [
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "4.683000000"
+      },
+      "event_timestamp": "2025-11-14T03:46:31Z",
+      "advertiser_display_name": "Abercrombie & Fitch (US)",
+      "product_title": "Women's Denim Jumpsuit | Women's Dresses & Jumpsuits | Abercrombie.com",
+      "product_id": "12f4157c1a152cf2106820923d7879fc",
+      "product_url": "https://www.abercrombie.com/shop/us/p/denim-jumpsuit-56727342?faceout=model&seq=02&pagefm=navigation-grid&prodvm=navigation-grid",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/aa6gtxxoWaGsZjEadjOrNMaGv54QLK6DgcHwKJi0V84iMKgc5ufidSFlziWIXL.jZeQQJFgv9ctHExGdNXhPAQD_JpAdul4hj2rI5._fb7F8XnAvepe1qJdNA271NVsYuU2xWXlEJJtyUu0szB57T7CD2GIh.Q--?v=2"
+      ],
+      "product_description": "Our short-sleeve jumpsuit in our comfortable denim fabric, featuring a straight-leg fit, classic collar, chest pockets with button-flap closure and side pockets.",
+      "rs_url": "https://rstyle.me/+EvQVfBoVLPIQaCCSPXh5_A",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "10.416000000"
+      },
+      "event_timestamp": "2025-11-14T03:46:31Z",
+      "advertiser_display_name": "Abercrombie & Fitch (US)",
+      "product_title": "Women's Denim Jumpsuit | Women's Dresses & Jumpsuits | Abercrombie.com",
+      "product_id": "12f4157c1a152cf2106820923d7879fc",
+      "product_url": "https://www.abercrombie.com/shop/us/p/denim-jumpsuit-56727342?faceout=model&seq=02&pagefm=navigation-grid&prodvm=navigation-grid",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/aa6gtxxoWaGsZjEadjOrNMaGv54QLK6DgcHwKJi0V84iMKgc5ufidSFlziWIXL.jZeQQJFgv9ctHExGdNXhPAQD_JpAdul4hj2rI5._fb7F8XnAvepe1qJdNA271NVsYuU2xWXlEJJtyUu0szB57T7CD2GIh.Q--?v=2"
+      ],
+      "product_description": "Our short-sleeve jumpsuit in our comfortable denim fabric, featuring a straight-leg fit, classic collar, chest pockets with button-flap closure and side pockets.",
+      "rs_url": "https://rstyle.me/+EvQVfBoVLPIQaCCSPXh5_A",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "6.762000000"
+      },
+      "event_timestamp": "2025-11-14T03:46:31Z",
+      "advertiser_display_name": "Abercrombie & Fitch (US)",
+      "product_title": "Women's Denim Jumpsuit | Women's Dresses & Jumpsuits | Abercrombie.com",
+      "product_id": "12f4157c1a152cf2106820923d7879fc",
+      "product_url": "https://www.abercrombie.com/shop/us/p/denim-jumpsuit-56727342?faceout=model&seq=02&pagefm=navigation-grid&prodvm=navigation-grid",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/aa6gtxxoWaGsZjEadjOrNMaGv54QLK6DgcHwKJi0V84iMKgc5ufidSFlziWIXL.jZeQQJFgv9ctHExGdNXhPAQD_JpAdul4hj2rI5._fb7F8XnAvepe1qJdNA271NVsYuU2xWXlEJJtyUu0szB57T7CD2GIh.Q--?v=2"
+      ],
+      "product_description": "Our short-sleeve jumpsuit in our comfortable denim fabric, featuring a straight-leg fit, classic collar, chest pockets with button-flap closure and side pockets.",
+      "rs_url": "https://rstyle.me/+EvQVfBoVLPIQaCCSPXh5_A",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "1.400000000"
+      },
+      "event_timestamp": "2025-11-14T03:16:18Z",
+      "advertiser_display_name": "Old Navy (US)",
+      "product_title": "Bounce Fleece Bomber Jacket",
+      "product_id": "d930d895025f1ff2f22cda5054e6fb18",
+      "product_url": "https://oldnavy.gap.com/browse/product.do?pid=833303022&vid=2&tid=onpl000078&kwid=1&ap=7&ds_agid=17394539939-&gclsrc=aw.ds&gad_source=1&gad_campaignid=17394539732&gbraid=0AAAAAD_AT8u9DUmpXbj0cybI8Y5sTijmj&gclid=CjwKCAiAlMHIBhAcEiwAZhZBUuLHCZP1ndzTUI9em91yFdiovrbdyhk5XaHkr93WYuRh16MywnS3bBoCHsUQAvD_BwE#pdp-page-content",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/2o8rkSwVQDLB_34eliqo2PZTeVD.avlzQHw_Rmp5lD0RQ43jcTlPtwnV_eD4X6dLnzTGPYZ5EVJSoIsc2INutdHQQec.R0PyQ1sUtmznXe9GVWo0EfysYuyI?v=2"
+      ],
+      "product_description": "pointed collar long wide sleeves drop-shoulder sleeves full-zip front vertical welt pockets bubble hem #833303",
+      "rs_url": "https://rstyle.me/+2TDYlQJfH_LyLNpQVOb7GA",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "1.617000000"
+      },
+      "event_timestamp": "2025-11-14T03:16:18Z",
+      "advertiser_display_name": "Old Navy (US)",
+      "product_title": "Bounce Fleece Bomber Jacket",
+      "product_id": "d930d895025f1ff2f22cda5054e6fb18",
+      "product_url": "https://oldnavy.gap.com/browse/product.do?pid=833303022&vid=2&tid=onpl000078&kwid=1&ap=7&ds_agid=17394539939-&gclsrc=aw.ds&gad_source=1&gad_campaignid=17394539732&gbraid=0AAAAAD_AT8u9DUmpXbj0cybI8Y5sTijmj&gclid=CjwKCAiAlMHIBhAcEiwAZhZBUuLHCZP1ndzTUI9em91yFdiovrbdyhk5XaHkr93WYuRh16MywnS3bBoCHsUQAvD_BwE#pdp-page-content",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/2o8rkSwVQDLB_34eliqo2PZTeVD.avlzQHw_Rmp5lD0RQ43jcTlPtwnV_eD4X6dLnzTGPYZ5EVJSoIsc2INutdHQQec.R0PyQ1sUtmznXe9GVWo0EfysYuyI?v=2"
+      ],
+      "product_description": "pointed collar long wide sleeves drop-shoulder sleeves full-zip front vertical welt pockets bubble hem #833303",
+      "rs_url": "https://rstyle.me/+2TDYlQJfH_LyLNpQVOb7GA",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "1.617000000"
+      },
+      "event_timestamp": "2025-11-14T03:16:18Z",
+      "advertiser_display_name": "Old Navy (US)",
+      "product_title": "Bounce Fleece Bomber Jacket",
+      "product_id": "d930d895025f1ff2f22cda5054e6fb18",
+      "product_url": "https://oldnavy.gap.com/browse/product.do?pid=833303022&vid=2&tid=onpl000078&kwid=1&ap=7&ds_agid=17394539939-&gclsrc=aw.ds&gad_source=1&gad_campaignid=17394539732&gbraid=0AAAAAD_AT8u9DUmpXbj0cybI8Y5sTijmj&gclid=CjwKCAiAlMHIBhAcEiwAZhZBUuLHCZP1ndzTUI9em91yFdiovrbdyhk5XaHkr93WYuRh16MywnS3bBoCHsUQAvD_BwE#pdp-page-content",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/2o8rkSwVQDLB_34eliqo2PZTeVD.avlzQHw_Rmp5lD0RQ43jcTlPtwnV_eD4X6dLnzTGPYZ5EVJSoIsc2INutdHQQec.R0PyQ1sUtmznXe9GVWo0EfysYuyI?v=2"
+      ],
+      "product_description": "pointed collar long wide sleeves drop-shoulder sleeves full-zip front vertical welt pockets bubble hem #833303",
+      "rs_url": "https://rstyle.me/+2TDYlQJfH_LyLNpQVOb7GA",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "0.175000000"
+      },
+      "event_timestamp": "2025-11-14T03:16:18Z",
+      "advertiser_display_name": "Old Navy (US)",
+      "product_title": "Bounce Fleece Bomber Jacket",
+      "product_id": "d930d895025f1ff2f22cda5054e6fb18",
+      "product_url": "https://oldnavy.gap.com/browse/product.do?pid=833303022&vid=2&tid=onpl000078&kwid=1&ap=7&ds_agid=17394539939-&gclsrc=aw.ds&gad_source=1&gad_campaignid=17394539732&gbraid=0AAAAAD_AT8u9DUmpXbj0cybI8Y5sTijmj&gclid=CjwKCAiAlMHIBhAcEiwAZhZBUuLHCZP1ndzTUI9em91yFdiovrbdyhk5XaHkr93WYuRh16MywnS3bBoCHsUQAvD_BwE#pdp-page-content",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/2o8rkSwVQDLB_34eliqo2PZTeVD.avlzQHw_Rmp5lD0RQ43jcTlPtwnV_eD4X6dLnzTGPYZ5EVJSoIsc2INutdHQQec.R0PyQ1sUtmznXe9GVWo0EfysYuyI?v=2"
+      ],
+      "product_description": "pointed collar long wide sleeves drop-shoulder sleeves full-zip front vertical welt pockets bubble hem #833303",
+      "rs_url": "https://rstyle.me/+2TDYlQJfH_LyLNpQVOb7GA",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "1.617000000"
+      },
+      "event_timestamp": "2025-11-14T03:16:18Z",
+      "advertiser_display_name": "Old Navy (US)",
+      "product_title": "Bounce Fleece Bomber Jacket",
+      "product_id": "d930d895025f1ff2f22cda5054e6fb18",
+      "product_url": "https://oldnavy.gap.com/browse/product.do?pid=833303022&vid=2&tid=onpl000078&kwid=1&ap=7&ds_agid=17394539939-&gclsrc=aw.ds&gad_source=1&gad_campaignid=17394539732&gbraid=0AAAAAD_AT8u9DUmpXbj0cybI8Y5sTijmj&gclid=CjwKCAiAlMHIBhAcEiwAZhZBUuLHCZP1ndzTUI9em91yFdiovrbdyhk5XaHkr93WYuRh16MywnS3bBoCHsUQAvD_BwE#pdp-page-content",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/2o8rkSwVQDLB_34eliqo2PZTeVD.avlzQHw_Rmp5lD0RQ43jcTlPtwnV_eD4X6dLnzTGPYZ5EVJSoIsc2INutdHQQec.R0PyQ1sUtmznXe9GVWo0EfysYuyI?v=2"
+      ],
+      "product_description": "pointed collar long wide sleeves drop-shoulder sleeves full-zip front vertical welt pockets bubble hem #833303",
+      "rs_url": "https://rstyle.me/+2TDYlQJfH_LyLNpQVOb7GA",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "0.840000000"
+      },
+      "event_timestamp": "2025-11-14T03:16:18Z",
+      "advertiser_display_name": "Old Navy (US)",
+      "product_title": "Bounce Fleece Bomber Jacket",
+      "product_id": "d930d895025f1ff2f22cda5054e6fb18",
+      "product_url": "https://oldnavy.gap.com/browse/product.do?pid=833303022&vid=2&tid=onpl000078&kwid=1&ap=7&ds_agid=17394539939-&gclsrc=aw.ds&gad_source=1&gad_campaignid=17394539732&gbraid=0AAAAAD_AT8u9DUmpXbj0cybI8Y5sTijmj&gclid=CjwKCAiAlMHIBhAcEiwAZhZBUuLHCZP1ndzTUI9em91yFdiovrbdyhk5XaHkr93WYuRh16MywnS3bBoCHsUQAvD_BwE#pdp-page-content",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/2o8rkSwVQDLB_34eliqo2PZTeVD.avlzQHw_Rmp5lD0RQ43jcTlPtwnV_eD4X6dLnzTGPYZ5EVJSoIsc2INutdHQQec.R0PyQ1sUtmznXe9GVWo0EfysYuyI?v=2"
+      ],
+      "product_description": "pointed collar long wide sleeves drop-shoulder sleeves full-zip front vertical welt pockets bubble hem #833303",
+      "rs_url": "https://rstyle.me/+2TDYlQJfH_LyLNpQVOb7GA",
+      "status": "Open",
+      "publisher_id": 293045
+    },
+    {
+      "event_type": "SALE_COMMISSION",
+      "amount": {
+        "currency": "USD",
+        "value": "1.617000000"
+      },
+      "event_timestamp": "2025-11-14T03:16:18Z",
+      "advertiser_display_name": "Old Navy (US)",
+      "product_title": "Bounce Fleece Bomber Jacket",
+      "product_id": "d930d895025f1ff2f22cda5054e6fb18",
+      "product_url": "https://oldnavy.gap.com/browse/product.do?pid=833303022&vid=2&tid=onpl000078&kwid=1&ap=7&ds_agid=17394539939-&gclsrc=aw.ds&gad_source=1&gad_campaignid=17394539732&gbraid=0AAAAAD_AT8u9DUmpXbj0cybI8Y5sTijmj&gclid=CjwKCAiAlMHIBhAcEiwAZhZBUuLHCZP1ndzTUI9em91yFdiovrbdyhk5XaHkr93WYuRh16MywnS3bBoCHsUQAvD_BwE#pdp-page-content",
+      "product_image_urls": [
+        "https://product-images-cdn.liketoknow.it/2o8rkSwVQDLB_34eliqo2PZTeVD.avlzQHw_Rmp5lD0RQ43jcTlPtwnV_eD4X6dLnzTGPYZ5EVJSoIsc2INutdHQQec.R0PyQ1sUtmznXe9GVWo0EfysYuyI?v=2"
+      ],
+      "product_description": "pointed collar long wide sleeves drop-shoulder sleeves full-zip front vertical welt pockets bubble hem #833303",
+      "rs_url": "https://rstyle.me/+2TDYlQJfH_LyLNpQVOb7GA",
+      "status": "Open",
+      "publisher_id": 293045
+    }
+  ],
+  "meta": {
+    "next": "2064833751",
+    "currency": ""
+  }
+}
+Get Commissions Summary
+306ms
+Response:
+Copy
+{
+  "commissions_summary": {
+    "updated_at": "2025-11-14T15:49:57Z",
+    "currency": "USD",
+    "payment_due": 1.44,
+    "open_earnings": 20181.48,
+    "lifetime_paid": 261420.96,
+    "lifetime_open_closed": 281603.88
+  }
+}
+Get User
+97ms
+HTTP 404: "404 page not found\n"
+Get Account
+98ms
+HTTP 404: "404 page not found\n"
+Get Account Users
+101ms
+HTTP 404: "404 page not found\n"
+Get User Info
+100ms
+HTTP 404: "404 page not found\n"
+Get Public Profile
+99ms
+HTTP 404: "404 page not found\n"
+Get Amazon Identities
+101ms
+HTTP 404: "404 page not found\n"
+Get LTK Search Trends
+99ms
+HTTP 404: "404 page not found\n"
+How to Get Your Token
+Go to creator.shopltk.com and log in
+Open Chrome DevTools (F12) → Console tab
+Run this code:
+document.cookie
+  .split('; ')
+  .find(row => row.startsWith('auth._id_token.auth0='))
+  ?.split('=')[1]
+4. Copy the output and paste it above
+
+Token expires after ~28 hours. You'll need to get a fresh one if it expires.
