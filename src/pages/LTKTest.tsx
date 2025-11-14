@@ -257,7 +257,7 @@ export default function LTKTest() {
 
         <button
           onClick={testAllEndpoints}
-          disabled={!accessToken || !idToken || !isIdTokenValid || isTestingAll}
+          disabled={!accessToken || !idToken || isTestingAll}
           className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           data-testid="button-test-all"
         >
