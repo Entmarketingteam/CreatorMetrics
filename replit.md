@@ -8,22 +8,36 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
-**November 14, 2025** - Backend Proxy Server Implementation ✅
-- **Major Architecture Change**: Added Express backend server to bypass LTK CORS restrictions
-- Backend server (port 3001) proxies requests to `api-gateway.rewardstyle.com`
-  * All 14 LTK API endpoints now accessible via backend proxy
+**November 14, 2025** - Production-Ready Backend Proxy Server ✅
+- **Major Architecture Change**: Full-stack application with Express backend
+- **Backend server** (`server/index.ts`) proxies requests to `api-gateway.rewardstyle.com`
+  * All 14 LTK API endpoints accessible via `/api/ltk/*`
   * Server-to-server requests bypass browser CORS policies
   * Secure token forwarding via `x-ltk-token` header
-- Package.json updated with concurrently to run frontend + backend simultaneously
-  * `npm run dev` starts both Vite (5000) and Express (3001)
-  * Development: Backend at localhost:3001
-  * Production: Backend runs on same domain (Autoscale deployment)
-- Frontend LTK API client updated to use backend proxy
-  * Removed direct calls to api-gateway.rewardstyle.com
-  * Now calls `/api/ltk/*` endpoints on backend
-  * Automatic CORS bypass
-- Deployment configured for Replit Autoscale
-- `/ltk-test` page updated to reflect working backend proxy
+  * Route priority: API routes → static assets → SPA fallback
+  * File existence checks prevent 500 errors on cold starts
+  * Async error handling for production stability
+- **Development environment**: Dual-server architecture
+  * `npm run dev` uses concurrently to run both servers
+  * Vite dev server on port 5000 (frontend)
+  * Express server on port 3001 (backend API)
+  * Frontend configured to call `localhost:3001/api/ltk/*`
+- **Production environment**: Single-server architecture
+  * Replit Autoscale runs: `npm run build` → `npm run start`
+  * Express server serves both frontend assets and backend API
+  * Frontend uses same-origin `/api/ltk/*` endpoints
+  * Single process on `process.env.PORT` (Replit-provided)
+- **Frontend integration** (`src/lib/ltkApiClient.ts`)
+  * VITE_BACKEND_URL defaults to empty string (same-origin)
+  * Development: Override with `http://localhost:3001` via .env
+  * Production: Automatically uses same origin
+  * Type-safe interfaces for all 14 endpoints
+  * Automatic 401 retry with token refresh
+- **Deployment configuration** (`.replit`)
+  * Build command: `npm run build` (creates /dist folder)
+  * Run command: `npm run start` (starts Express server)
+  * Single exposed port for frontend + backend
+- `/ltk-test` page ready for testing with real Auth0 tokens
 - CSV import still available as alternative method
 - Documentation: `docs/ltk-integration-limitations.md` explains all integration options
 
