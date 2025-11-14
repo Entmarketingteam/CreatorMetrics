@@ -1,0 +1,53 @@
+Get Contributors
+86ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Hero Chart
+66ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Performance Summary
+64ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Performance Stats
+63ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Top Performers
+61ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Items Sold
+60ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Commissions Summary
+63ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get User
+62ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Account
+61ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Account Users
+63ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get User Info
+62ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Public Profile
+60ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get Amazon Identities
+75ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+Get LTK Search Trends
+63ms
+Failed to execute 'json' on 'Response': Unexpected token '<', "<!doctype "... is not valid JSON
+How to Get Your Token
+Go to creator.shopltk.com and log in
+Open Chrome DevTools (F12) → Console tab
+Run this code:
+document.cookie
+  .split('; ')
+  .find(row => row.startsWith('auth._id_token.auth0='))
+  ?.split('=')[1]
+4. Copy the output and paste it above
+
+Token expires after ~28 hours. You'll need to get a fresh one if it expires.
