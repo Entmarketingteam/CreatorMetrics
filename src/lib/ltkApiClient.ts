@@ -1,288 +1,121 @@
 /**
  * LTK API Client
  * 
- * Handles authenticated requests to LTK's API Gateway using Auth0 ID tokens.
- * Implements automatic token refresh and retry logic for 401 responses.
- * 
- * Usage:
- * ```typescript
- * const client = new LTKApiClient(() => ltkAuthService.getTokens()?.access_token);
- * const contributors = await client.getContributors();
- * const heroData = await client.getHeroChart({
- *   start_date: '2025-09-25T00:00:00Z',
- *   end_date: '2025-10-02T23:59:59Z',
- *   publisher_ids: '293045,987693288',
- *   interval: 'day',
- *   platform: 'rs,ltk',
- *   timezone: 'UTC'
- * });
- * ```
+ * Uses backend proxy to access LTK API and bypass CORS restrictions.
+ * Backend server forwards requests to api-gateway.rewardstyle.com
  */
 
-const API_BASE = 'https://api-gateway.rewardstyle.com';
+// Use backend proxy URL
+// Development: http://localhost:3001
+// Production: Same origin (empty string defaults to current host)
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
+const PROXY_BASE = `${BACKEND_URL}/api/ltk`;
 
-export interface HeroChartParams {
-  start_date: string; // ISO 8601: '2025-09-25T00:00:00Z'
-  end_date: string;   // ISO 8601: '2025-10-02T23:59:59Z'
-  publisher_ids: string; // Comma-separated: '293045,987693288'
+export interface LTKAnalyticsParams {
+  start_date?: string;
+  end_date?: string;
+  publisher_ids?: string;
+  platform?: string;
   interval?: 'day' | 'week' | 'month';
-  platform: 'rs' | 'ltk' | 'rs,ltk';
-  timezone?: string; // Default: 'UTC'
-}
-
-export interface PerformanceSummaryParams {
-  start_date: string;
-  end_date: string;
-  publisher_ids: string;
-  platform?: string;
-}
-
-export interface PerformanceStatsParams {
-  start: string;
-  end: string;
-  currency?: string; // Default: 'USD'
-}
-
-export interface ItemsSoldParams {
   limit?: number;
-  currency?: string;
-  start_date?: string;
-  end_date?: string;
+  start?: string;
+  end?: string;
 }
 
-export interface CommissionsSummaryParams {
-  currency?: string;
-  start_date?: string;
-  end_date?: string;
-}
-
-export interface TopPerformersParams {
-  start_date: string;
-  end_date: string;
-  publisher_ids: string;
-  platform?: string;
-  timezone?: string;
-  limit?: number;
-}
-
-/**
- * LTK API Client
- * Authenticated client for LTK's API Gateway
- */
 export class LTKApiClient {
-  private getIdToken: () => string | null;
-  private onTokenRefresh?: () => Promise<void>;
+  constructor(private getToken: () => string) {}
 
-  constructor(
-    getIdToken: () => string | null,
-    onTokenRefresh?: () => Promise<void>
-  ) {
-    this.getIdToken = getIdToken;
-    this.onTokenRefresh = onTokenRefresh;
-  }
-
-  /**
-   * Make authenticated request to LTK API
-   * Automatically retries once on 401 after attempting token refresh
-   */
-  private async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const idToken = this.getIdToken();
-    if (!idToken) {
-      throw new Error('Not authenticated - no ID token available');
+  private async request(endpoint: string, options: RequestInit = {}) {
+    const token = this.getToken();
+    
+    if (!token) {
+      throw new Error('No LTK token available');
     }
 
-    const url = `${API_BASE}${endpoint}`;
+    const url = `${PROXY_BASE}${endpoint}`;
     
     const response = await fetch(url, {
       ...options,
       headers: {
-        'x-id-token': idToken, // LTK uses x-id-token, not Authorization
         'Content-Type': 'application/json',
+        'x-ltk-token': token,
         ...options.headers,
       },
     });
 
-    // Handle 401 Unauthorized - try to refresh token and retry
     if (response.status === 401) {
-      if (this.onTokenRefresh) {
-        try {
-          await this.onTokenRefresh();
-          
-          // Retry with new token
-          const newToken = this.getIdToken();
-          if (!newToken) throw new Error('Token refresh failed');
-          
-          const retryResponse = await fetch(url, {
-            ...options,
-            headers: {
-              'x-id-token': newToken,
-              'Content-Type': 'application/json',
-              ...options.headers,
-            },
-          });
-          
-          if (!retryResponse.ok) {
-            throw new Error(`LTK API error: ${retryResponse.status} ${retryResponse.statusText}`);
-          }
-          
-          return retryResponse.json();
-        } catch (error) {
-          throw new Error('Authentication failed after token refresh');
-        }
-      }
       throw new Error('Unauthorized - token expired and no refresh handler configured');
     }
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`LTK API error: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
     return response.json();
   }
 
-  /**
-   * Build query string from params object
-   */
-  private buildQuery(params: Record<string, any>): string {
-    const query = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        query.append(key, String(value));
-      }
-    });
-    return query.toString();
+  // Analytics Endpoints
+  async getContributors() {
+    return this.request('/analytics/contributors');
   }
 
-  // ============================================================================
-  // ANALYTICS ENDPOINTS
-  // ============================================================================
-
-  /**
-   * Get list of contributor/publisher accounts
-   * Returns all publisher accounts associated with the authenticated user
-   */
-  async getContributors(): Promise<any> {
-    return this.fetch('/analytics/contributors');
+  async getHeroChart(params: LTKAnalyticsParams) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/analytics/hero-chart?${query}`);
   }
 
-  /**
-   * Get hero chart data (main dashboard metrics over time)
-   * Returns time-series data for clicks, sales, revenue by day/week/month
-   */
-  async getHeroChart(params: HeroChartParams): Promise<any> {
-    const query = this.buildQuery(params);
-    return this.fetch(`/analytics/hero_chart?${query}`);
+  async getPerformanceSummary(params: LTKAnalyticsParams) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/analytics/performance-summary?${query}`);
   }
 
-  /**
-   * Get performance summary (aggregated metrics)
-   * Returns total clicks, sales, revenue, commission for date range
-   */
-  async getPerformanceSummary(params: PerformanceSummaryParams): Promise<any> {
-    const query = this.buildQuery(params);
-    return this.fetch(`/api/creator-analytics/v1/performance_summary?${query}`);
+  async getPerformanceStats(params: LTKAnalyticsParams) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/analytics/performance-stats?${query}`);
   }
 
-  /**
-   * Get detailed performance stats
-   */
-  async getPerformanceStats(params: PerformanceStatsParams): Promise<any> {
-    const query = this.buildQuery(params);
-    return this.fetch(`/api/creator-analytics/v1/performance_stats?${query}`);
+  async getTopPerformers(params: LTKAnalyticsParams) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/analytics/top-performers?${query}`);
   }
 
-  /**
-   * Get top performing links
-   * Returns array of best-performing affiliate links with metrics
-   */
-  async getTopPerformers(params: TopPerformersParams): Promise<any> {
-    const query = this.buildQuery(params);
-    return this.fetch(`/analytics/top_performers/links?${query}`);
+  async getItemsSold(params: { limit?: number; offset?: number; status?: string } = {}) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request(`/analytics/items-sold?${query}`);
   }
 
-  /**
-   * Get items sold
-   * Returns list of products that generated sales
-   */
-  async getItemsSold(params: ItemsSoldParams = {}): Promise<any> {
-    const query = this.buildQuery({ limit: 50, currency: 'USD', ...params });
-    return this.fetch(`/api/creator-analytics/v1/items_sold/?${query}`);
+  async getCommissionsSummary() {
+    return this.request('/analytics/commissions-summary');
   }
 
-  /**
-   * Get commissions summary
-   * Returns earnings/commission breakdown
-   */
-  async getCommissionsSummary(params: CommissionsSummaryParams = {}): Promise<any> {
-    const query = this.buildQuery({ currency: 'USD', ...params });
-    return this.fetch(`/api/creator-analytics/v1/commissions_summary?${query}`);
+  // User & Account Endpoints
+  async getUser(publisherId: number) {
+    return this.request(`/user/${publisherId}`);
   }
 
-  // ============================================================================
-  // USER & ACCOUNT ENDPOINTS
-  // ============================================================================
-
-  /**
-   * Get user profile
-   */
-  async getUser(userId: number): Promise<any> {
-    return this.fetch(`/api/creator-account-service/v1/users/${userId}`);
+  async getAccount(accountId: number) {
+    return this.request(`/account/${accountId}`);
   }
 
-  /**
-   * Get account details
-   */
-  async getAccount(accountId: number): Promise<any> {
-    return this.fetch(`/api/creator-account-service/v1/accounts/${accountId}`);
+  async getAccountUsers(accountId: number) {
+    return this.request(`/account/${accountId}/users`);
   }
 
-  /**
-   * Get account users
-   */
-  async getAccountUsers(accountId: number): Promise<any> {
-    return this.fetch(`/api/creator-account-service/v1/accounts/${accountId}/users`);
+  async getUserInfo() {
+    return this.request('/user-info');
   }
 
-  /**
-   * Get current user info
-   */
-  async getUserInfo(): Promise<any> {
-    return this.fetch('/api/co-api/v1/get_user_info');
+  async getPublicProfile(accountId: number) {
+    return this.request(`/public-profile/${accountId}`);
   }
 
-  /**
-   * Get public profile
-   */
-  async getPublicProfile(accountId: number): Promise<any> {
-    const query = this.buildQuery({ rs_account_id: accountId });
-    return this.fetch(`/api/pub/v2/profiles/?${query}`);
+  // Integration Endpoints
+  async getAmazonIdentities() {
+    return this.request('/amazon-identities');
   }
 
-  /**
-   * Get Amazon identities (linked Amazon Associate accounts)
-   */
-  async getAmazonIdentities(): Promise<any> {
-    return this.fetch('/api/co-api/v1/get_amazon_identities');
+  async getLTKSearchTrends() {
+    return this.request('/search-trends');
   }
-
-  /**
-   * Get LTK search trends
-   */
-  async getLTKSearchTrends(): Promise<any> {
-    return this.fetch('/api/ltk/v2/ltk_search_trends/');
-  }
-}
-
-/**
- * Create LTK API client instance
- * 
- * @param getIdToken - Function that returns current Auth0 ID token
- * @param onTokenRefresh - Optional callback to refresh token on 401
- */
-export function createLTKApiClient(
-  getIdToken: () => string | null,
-  onTokenRefresh?: () => Promise<void>
-): LTKApiClient {
-  return new LTKApiClient(getIdToken, onTokenRefresh);
 }

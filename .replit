@@ -7,7 +7,7 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npm", "run", "start"]
+run = ["bash", "-c", "npm run start"]
 build = ["npm", "run", "build"]
 
 [workflows]
@@ -35,9 +35,13 @@ waitForPort = 5000
 outputType = "webview"
 
 [[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 39537
+localPort = 36843
 externalPort = 3000
