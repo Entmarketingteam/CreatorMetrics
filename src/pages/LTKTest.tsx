@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LTKApiClient } from '../lib/ltkApiClient';
 import { useLTKAuth } from '../hooks/useLTKAuth';
-import { Loader2, CheckCircle2, XCircle, Copy, Save } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Copy, Save, ArrowLeft } from 'lucide-react';
 
 interface TestResult {
   endpoint: string;
@@ -12,6 +13,7 @@ interface TestResult {
 }
 
 export default function LTKTest() {
+  const navigate = useNavigate();
   const { tokens, saveTokens, clearTokens } = useLTKAuth();
   const [accessToken, setAccessToken] = useState('');
   const [idToken, setIdToken] = useState('');
@@ -157,11 +159,21 @@ export default function LTKTest() {
         </div>
       </div>
 
-      <div>
-        <h1 className="text-3xl font-bold mb-2">LTK API Tester</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Test all 14 LTK API endpoints with your Auth0 token via backend proxy
-        </p>
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          data-testid="button-back-to-dashboard"
+          title="Back to Dashboard"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold mb-2">LTK API Tester</h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Test all 14 LTK API endpoints with your Auth0 token via backend proxy
+          </p>
+        </div>
       </div>
 
       {/* Token Input */}

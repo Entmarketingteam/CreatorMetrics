@@ -75,55 +75,74 @@ export default function Dashboard() {
         platform: 'rs,ltk',
       };
 
+      const topPerformersParams = {
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        publisher_ids: '293045',
+        platform: 'rs,ltk',
+        limit: 10,
+      };
+
       const [statsRes, performersRes, commissionsRes, heroRes] = await Promise.all([
         ltkClient.getPerformanceStats(params),
-        ltkClient.getTopPerformers({ ...params, limit: 10 }),
+        ltkClient.getTopPerformersLTKs(topPerformersParams),
         ltkClient.getCommissionsSummary(),
         ltkClient.getHeroChart({ ...params, interval: 'day' }),
       ]);
 
-      if (statsRes && statsRes.data) {
-        const data = statsRes.data;
+      console.log('Dashboard API responses:', { statsRes, performersRes, commissionsRes, heroRes });
+
+      // Parse Performance Stats
+      if (statsRes) {
+        const data = statsRes.data || statsRes;
         setStats({
-          revenue: data.total_revenue || 0,
-          clicks: data.total_clicks || 0,
-          sales: data.total_sales || 0,
-          conversionRate: data.total_clicks > 0 
-            ? ((data.total_sales / data.total_clicks) * 100) 
+          revenue: parseFloat(data.total_revenue || data.revenue || 0),
+          clicks: parseInt(data.total_clicks || data.clicks || 0),
+          sales: parseInt(data.total_sales || data.sales || data.items_sold || 0),
+          conversionRate: (data.total_clicks || data.clicks) > 0 
+            ? (((data.total_sales || data.sales || 0) / (data.total_clicks || data.clicks)) * 100) 
             : 0,
         });
       }
 
-      if (performersRes && performersRes.data) {
-        const performers = (performersRes.data.items || []).slice(0, 5).map((item: any) => ({
-          id: item.id || Math.random().toString(),
-          name: item.product_name || item.title || 'Product',
-          revenue: item.revenue || item.commissions || 0,
-          clicks: item.clicks || 0,
-          platform: item.platform || 'LTK',
+      // Parse Top Performers
+      if (performersRes) {
+        const items = performersRes.top_performers || performersRes.data?.items || performersRes.items || [];
+        const performers = items.slice(0, 5).map((item: any) => ({
+          id: item.product_id || item.id || Math.random().toString(),
+          name: item.product_title || item.product_name || item.title || 'Product',
+          revenue: parseFloat(item.commissions || item.revenue || item.total_revenue || 0),
+          clicks: parseInt(item.clicks || item.total_clicks || 0),
+          platform: 'LTK',
         }));
         setTopPerformers(performers);
       }
 
-      if (commissionsRes && commissionsRes.data) {
+      // Parse Commissions Summary  
+      if (commissionsRes) {
+        const data = commissionsRes.data || commissionsRes;
         setCommissionSummary({
-          pending: commissionsRes.data.pending || 0,
-          paid: commissionsRes.data.paid || 0,
-          total: commissionsRes.data.total || 0,
+          pending: parseFloat(data.open || data.pending || 0),
+          paid: parseFloat(data.paid || 0),
+          total: parseFloat(data.total || data.total_commissions || 0),
         });
       }
 
-      if (heroRes && heroRes.data && heroRes.data.chart_data) {
-        const formattedChartData = heroRes.data.chart_data.map((point: any) => ({
-          date: new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          revenue: point.revenue || 0,
-          clicks: point.clicks || 0,
+      // Parse Hero Chart
+      if (heroRes) {
+        const chartData = heroRes.chart_data || heroRes.data?.chart_data || heroRes.data || [];
+        const dataArray = Array.isArray(chartData) ? chartData : Object.values(chartData);
+        const formattedChartData = dataArray.slice(0, 30).map((point: any) => ({
+          date: new Date(point.date || point.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          revenue: parseFloat(point.revenue || point.commissions || 0),
+          clicks: parseInt(point.clicks || 0),
         }));
         setChartData(formattedChartData);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading dashboard data:', error);
+      console.error('Error details:', error.message, error.stack);
       setStats(null);
       setTopPerformers([]);
       setCommissionSummary(null);
