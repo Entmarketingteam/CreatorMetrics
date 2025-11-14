@@ -3,7 +3,6 @@ import { Instagram, DollarSign, TrendingUp, Eye, Heart, BarChart3, Link2, AlertC
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLTKAuth } from '../hooks/useLTKAuth';
-import { LTKApiClient } from '../lib/ltkApiClient';
 import { matchInstagramToLTK, calculateAttributionStats, extractLTKLinks, type MatchedContent, type InstagramPost, type LTKPost } from '../lib/contentMatcher';
 
 type Period = '7D' | '30D' | '1Y';
@@ -16,7 +15,7 @@ const PERIODS = [
 
 export default function ContentAnalytics() {
   const { user } = useAuth();
-  const { tokens } = useLTKAuth();
+  const { isAuthenticated, createClient } = useLTKAuth();
   const [period, setPeriod] = useState<Period>('30D');
   const [loading, setLoading] = useState(true);
   const [igPosts, setIgPosts] = useState<InstagramPost[]>([]);
@@ -24,11 +23,11 @@ export default function ContentAnalytics() {
   const [matchedContent, setMatchedContent] = useState<MatchedContent[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<MatchedContent | null>(null);
 
-  const isLTKConnected = tokens !== null;
+  const isLTKConnected = isAuthenticated;
 
   useEffect(() => {
     loadData();
-  }, [user, tokens, period]);
+  }, [user, isAuthenticated, period]);
 
   const loadData = async () => {
     if (!user) return;
@@ -72,9 +71,13 @@ export default function ContentAnalytics() {
       }
 
       // Load LTK posts if connected
-      if (isLTKConnected && tokens) {
+      if (isLTKConnected) {
         try {
-          const client = new LTKApiClient(tokens.accessToken, tokens.idToken);
+          const client = createClient();
+          if (!client) {
+            setLtkPosts([]);
+            return;
+          }
           
           const endDate = new Date();
           const response = await client.getTopPerformersLTKs({

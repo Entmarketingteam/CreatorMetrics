@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Bell, DollarSign, TrendingUp, ShoppingBag, Eye, Plus, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
+import { Bell, DollarSign, TrendingUp, ShoppingBag, Eye } from 'lucide-react';
 import { useLTKAuth } from '../hooks/useLTKAuth';
+import { PeriodToggle } from '../components/ui/PeriodToggle';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 type Period = '7D' | '30D' | '1Y';
@@ -44,7 +42,7 @@ interface ChartDataPoint {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { ltkClient, isReady } = useLTKAuth();
+  const { isAuthenticated, createClient } = useLTKAuth();
   const [period, setPeriod] = useState<Period>('30D');
   const [stats, setStats] = useState<PerformanceStats | null>(null);
   const [topPerformers, setTopPerformers] = useState<TopPerformer[]>([]);
@@ -53,18 +51,18 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isReady && ltkClient) {
+    if (isAuthenticated) {
       loadDashboardData();
     }
-  }, [isReady, ltkClient, period]);
+  }, [isAuthenticated, period]);
 
   const loadDashboardData = async () => {
+    const ltkClient = createClient();
     if (!ltkClient) return;
 
     try {
       setLoading(true);
       
-      // Calculate date range based on period
       const daysAgo = period === '7D' ? 7 : period === '30D' ? 30 : 365;
       const endDate = new Date();
       const startDate = new Date();
@@ -73,11 +71,10 @@ export default function Dashboard() {
       const params = {
         start: startDate.toISOString(),
         end: endDate.toISOString(),
-        publisher_ids: '293045', // User's publisher ID
+        publisher_ids: '293045',
         platform: 'rs,ltk',
       };
 
-      // Load all data in parallel
       const [statsRes, performersRes, commissionsRes, heroRes] = await Promise.all([
         ltkClient.getPerformanceStats(params),
         ltkClient.getTopPerformers({ ...params, limit: 10 }),
@@ -85,7 +82,6 @@ export default function Dashboard() {
         ltkClient.getHeroChart({ ...params, interval: 'day' }),
       ]);
 
-      // Process performance stats
       if (statsRes && statsRes.data) {
         const data = statsRes.data;
         setStats({
@@ -98,7 +94,6 @@ export default function Dashboard() {
         });
       }
 
-      // Process top performers
       if (performersRes && performersRes.data) {
         const performers = (performersRes.data.items || []).slice(0, 5).map((item: any) => ({
           id: item.id || Math.random().toString(),
@@ -110,7 +105,6 @@ export default function Dashboard() {
         setTopPerformers(performers);
       }
 
-      // Process commissions
       if (commissionsRes && commissionsRes.data) {
         setCommissionSummary({
           pending: commissionsRes.data.pending || 0,
@@ -119,7 +113,6 @@ export default function Dashboard() {
         });
       }
 
-      // Process chart data
       if (heroRes && heroRes.data && heroRes.data.chart_data) {
         const formattedChartData = heroRes.data.chart_data.map((point: any) => ({
           date: new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -131,7 +124,6 @@ export default function Dashboard() {
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      // Set mock data on error
       setStats({
         revenue: 1847.52,
         clicks: 3420,
@@ -155,12 +147,20 @@ export default function Dashboard() {
     }
   };
 
-  if (!isReady) {
+  if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-body text-muted-foreground">Setting up LTK connection...</p>
+        <div className="text-center p-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">LTK Not Connected</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Please connect your LTK account to view dashboard metrics
+          </p>
+          <button
+            onClick={() => navigate('/settings')}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover-elevate active-elevate-2"
+          >
+            Go to Settings
+          </button>
         </div>
       </div>
     );
@@ -170,8 +170,8 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-body text-muted-foreground">Loading your dashboard...</p>
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -182,301 +182,197 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-h1 font-bold text-foreground" data-testid="text-dashboard-title">Dashboard</h1>
-          <p className="text-body text-muted-foreground mt-1">Your creator analytics overview</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-dashboard-title">Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Your creator analytics overview</p>
         </div>
-        <Button variant="ghost" size="icon" data-testid="button-notifications">
+        <button className="p-2 text-gray-600 dark:text-gray-400 hover-elevate active-elevate-2" data-testid="button-notifications">
           <Bell className="w-5 h-5" />
-        </Button>
+        </button>
       </div>
 
       {/* Period Toggle */}
-      <div className="flex gap-2">
-        {PERIODS.map((p) => (
-          <Button
-            key={p.value}
-            variant={period === p.value ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPeriod(p.value as Period)}
-            data-testid={`button-period-${p.value}`}
-          >
-            {p.label}
-          </Button>
-        ))}
-      </div>
+      <PeriodToggle periods={PERIODS} selected={period} onChange={(val) => setPeriod(val as Period)} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card data-testid="card-revenue">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-caption font-medium">Revenue</CardTitle>
-            <DollarSign className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-h2 font-bold" data-testid="text-revenue">
-              ${stats?.revenue.toFixed(2) || '0.00'}
-            </div>
-            <p className="text-caption text-muted-foreground mt-1">
-              +12.5% from last period
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" data-testid="card-revenue">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Revenue</p>
+            <DollarSign className="w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="text-revenue">
+            ${stats?.revenue.toFixed(2) || '0.00'}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">+12.5% from last period</p>
+        </div>
 
-        <Card data-testid="card-clicks">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-caption font-medium">Clicks</CardTitle>
-            <Eye className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-h2 font-bold" data-testid="text-clicks">
-              {stats?.clicks.toLocaleString() || '0'}
-            </div>
-            <p className="text-caption text-muted-foreground mt-1">
-              +8.2% from last period
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" data-testid="card-clicks">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Clicks</p>
+            <Eye className="w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="text-clicks">
+            {stats?.clicks.toLocaleString() || '0'}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">+8.2% from last period</p>
+        </div>
 
-        <Card data-testid="card-sales">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-caption font-medium">Sales</CardTitle>
-            <ShoppingBag className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-h2 font-bold" data-testid="text-sales">
-              {stats?.sales || 0}
-            </div>
-            <p className="text-caption text-muted-foreground mt-1">
-              +15.3% from last period
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" data-testid="card-sales">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Sales</p>
+            <ShoppingBag className="w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="text-sales">
+            {stats?.sales || 0}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">+15.3% from last period</p>
+        </div>
 
-        <Card data-testid="card-conversion">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-caption font-medium">Conversion</CardTitle>
-            <TrendingUp className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-h2 font-bold" data-testid="text-conversion">
-              {stats?.conversionRate.toFixed(2)}%
-            </div>
-            <p className="text-caption text-muted-foreground mt-1">
-              +2.1% from last period
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" data-testid="card-conversion">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Conversion</p>
+            <TrendingUp className="w-4 h-4 text-gray-400" />
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="text-conversion">
+            {stats?.conversionRate.toFixed(2)}%
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">+2.1% from last period</p>
+        </div>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Revenue Chart */}
-        <Card data-testid="card-revenue-chart">
-          <CardHeader>
-            <CardTitle>Revenue Trend</CardTitle>
-            <CardDescription>Daily revenue over {period === '7D' ? '7 days' : period === '30D' ? '30 days' : '1 year'}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis 
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  style={{ fontSize: '12px' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="hsl(var(--primary))" 
-                  fill="url(#revenueGradient)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" data-testid="card-revenue-chart">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Revenue Trend</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Daily revenue over {period === '7D' ? '7 days' : period === '30D' ? '30 days' : '1 year'}</p>
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+              <XAxis dataKey="date" tick={{ fill: '#9ca3af' }} style={{ fontSize: '12px' }} />
+              <YAxis tick={{ fill: '#9ca3af' }} style={{ fontSize: '12px' }} />
+              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '6px' }} />
+              <Area type="monotone" dataKey="revenue" stroke="#6366f1" fill="url(#revenueGradient)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
 
-        {/* Clicks Chart */}
-        <Card data-testid="card-clicks-chart">
-          <CardHeader>
-            <CardTitle>Click Performance</CardTitle>
-            <CardDescription>Daily clicks over {period === '7D' ? '7 days' : period === '30D' ? '30 days' : '1 year'}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis 
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  style={{ fontSize: '12px' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="clicks" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" data-testid="card-clicks-chart">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Click Performance</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Daily clicks over {period === '7D' ? '7 days' : period === '30D' ? '30 days' : '1 year'}</p>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+              <XAxis dataKey="date" tick={{ fill: '#9ca3af' }} style={{ fontSize: '12px' }} />
+              <YAxis tick={{ fill: '#9ca3af' }} style={{ fontSize: '12px' }} />
+              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '6px' }} />
+              <Line type="monotone" dataKey="clicks" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Performers */}
-        <Card data-testid="card-top-performers">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" data-testid="card-top-performers">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <CardTitle>Top Performers</CardTitle>
-              <CardDescription>Products driving the most revenue</CardDescription>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Top Performers</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Products driving the most revenue</p>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <button 
               onClick={() => navigate('/products')}
+              className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
               data-testid="button-view-all-products"
             >
               View All
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {topPerformers.length === 0 ? (
-                <p className="text-body text-muted-foreground text-center py-4">
-                  No performance data available
-                </p>
-              ) : (
-                topPerformers.map((performer, index) => (
-                  <div 
-                    key={performer.id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-md bg-muted/50 hover-elevate"
-                    data-testid={`item-performer-${index}`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-body font-medium text-foreground truncate">
-                        {performer.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-caption">
-                          {performer.platform}
-                        </Badge>
-                        <span className="text-caption text-muted-foreground">
-                          {performer.clicks} clicks
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-body font-bold text-foreground">
-                        ${performer.revenue.toFixed(2)}
-                      </p>
+            </button>
+          </div>
+          <div className="space-y-3">
+            {topPerformers.length === 0 ? (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">No performance data available</p>
+            ) : (
+              topPerformers.map((performer, index) => (
+                <div 
+                  key={performer.id}
+                  className="flex items-center justify-between gap-3 p-3 rounded-md bg-gray-50 dark:bg-gray-700/50 hover-elevate"
+                  data-testid={`item-performer-${index}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {performer.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs px-2 py-0.5 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                        {performer.platform}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {performer.clicks} clicks
+                      </span>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    ${performer.revenue.toFixed(2)}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
 
         {/* Commissions Summary */}
-        <Card data-testid="card-commissions">
-          <CardHeader>
-            <CardTitle>Commissions</CardTitle>
-            <CardDescription>Your earnings breakdown</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-                <div>
-                  <p className="text-caption text-muted-foreground">Pending</p>
-                  <p className="text-h3 font-bold text-foreground mt-1" data-testid="text-pending">
-                    ${commissionSummary?.pending.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-                <Badge variant="secondary">Processing</Badge>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4" data-testid="card-commissions">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Commissions</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Your earnings breakdown</p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 dark:bg-gray-700/50">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white mt-1" data-testid="text-pending">
+                  ${commissionSummary?.pending.toFixed(2) || '0.00'}
+                </p>
               </div>
-
-              <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-                <div>
-                  <p className="text-caption text-muted-foreground">Paid</p>
-                  <p className="text-h3 font-bold text-foreground mt-1" data-testid="text-paid">
-                    ${commissionSummary?.paid.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-                <Badge variant="default">Completed</Badge>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-md bg-primary/10 border border-primary/20">
-                <div>
-                  <p className="text-caption text-primary">Total Earnings</p>
-                  <p className="text-h2 font-bold text-primary mt-1" data-testid="text-total-earnings">
-                    ${commissionSummary?.total.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-              </div>
-
-              <Button 
-                className="w-full" 
-                onClick={() => navigate('/earnings')}
-                data-testid="button-view-earnings"
-              >
-                View Detailed Earnings
-              </Button>
+              <span className="text-xs px-2 py-1 rounded-md bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+                Processing
+              </span>
             </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Button 
-          variant="outline" 
-          className="w-full justify-center gap-2"
-          onClick={() => navigate('/content-analytics')}
-          data-testid="button-share-ltk"
-        >
-          <Share2 className="w-4 h-4" />
-          Share my LTK
-        </Button>
-        <Button 
-          className="w-full justify-center gap-2"
-          onClick={() => navigate('/content')}
-          data-testid="button-create"
-        >
-          <Plus className="w-4 h-4" />
-          Create Content
-        </Button>
+            <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 dark:bg-gray-700/50">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Paid</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white mt-1" data-testid="text-paid">
+                  ${commissionSummary?.paid.toFixed(2) || '0.00'}
+                </p>
+              </div>
+              <span className="text-xs px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                Completed
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-md bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+              <div>
+                <p className="text-xs text-indigo-600 dark:text-indigo-400">Total Earnings</p>
+                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1" data-testid="text-total-earnings">
+                  ${commissionSummary?.total.toFixed(2) || '0.00'}
+                </p>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => navigate('/earnings')}
+              className="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg hover-elevate active-elevate-2"
+              data-testid="button-view-earnings"
+            >
+              View Detailed Earnings
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
