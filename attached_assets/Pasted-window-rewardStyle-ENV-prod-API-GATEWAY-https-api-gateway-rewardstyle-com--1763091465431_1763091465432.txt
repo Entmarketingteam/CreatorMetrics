@@ -1,0 +1,54 @@
+window.rewardStyle = {
+    ENV: "prod",
+    API_GATEWAY: "https://api-gateway.rewardstyle.com",
+    TYK_GATEWAY: "https://prod-tyk-gateway-v3.rewardstyle.com",
+    IDM_GATEWAY: "https://prod-idm.shopltk.com",
+    SIGIL_URL: "https://auth-creator.shopltk.com",
+    LEGACY_HOME_PAGE: "https://creator.shopltk.com",
+    HELP_CENTER_HOST: "help.rewardstyle.com",
+    MARKETING_PAGE: "https://company.shopltk.com",
+    ONBRAND_PAGE: "https://onbrand.shopltk.com",
+    COLLABORATIONS_PAGE: "https://collaborations.shopltk.com",
+    MESSAGES_PAGE: "https://messaging.shopltk.com/?sentFrom=influencer_platform",
+    CONSUMER_PLATFORM_PAGE: "https://www.shopltk.com",
+    RECAPTCHA_KEY: "6LdyEasUAAAAAHIC-yvEMgnAkqUNMbdaYBkwUVmw",
+    AMPLITUDE_API_KEY: "fa201f77b2ff3cebe58c7c7a5a0ffe80",
+    AMPLITUDE_EXPERIMENTS_CLIENT_KEY: "client-Y0OIVyeJQgnejQyWVgRNeUsEclCbH5qC",
+    SEARCH_INDEX: "prod-products-eng",
+    CLIENT_ID: 0,
+    ACCESS_TOKEN_COOKIE: "sigil_access_token",
+    ID_TOKEN_COOKIE: "sigil_id_token",
+    GOOGLE_TAG_MANAGER: {
+        CONTAINER_ID: "GTM-K32DMC9",
+        ENVIRONMENT_NAME: "env-2",
+        ENVIRONMENT_AUTHORIZATION_CODE: "JVCy6wEH7S9SJshu_qkdQA",
+        ENABLE_DEBUG: !1
+    },
+    AUTH0: {
+        audience: "https://creator-api-gateway.shopltk.com/v1",
+        clientId: "iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT",
+        domain: "creator-auth.shopltk.com",
+        redirectUri: "https://creator.shopltk.com/login/callback",
+        connection: "InfluencerUser",
+        endpoints: {
+            passwordReset: "https://creator-auth.shopltk.com/dbconnections/change_password"
+        }
+    },
+    FULLSTORY: {
+        orgId: "WG0DF"
+    },
+    LTK_PRODUCT_LINKS: "https://ln-rules.rewardstyle.com",
+    GOOGLE_MAPS_API_KEY: "AIzaSyCMfnbr21hLdks4O8FHcBIbp1CHJV7778s",
+    BRITEVERIFY_API_KEY: "8e968bd4-1da5-4740-9a62-dbefdc028b3c",
+    WIDGETS_HOST: "widgets.rewardstyle.com",
+    REWARDSTYLE_IMAGES: "https://images.rewardstyle.com",
+    IOS_PATCH_SYSTEM_BASE_URL: "https://static.liketoknow.it/ios/production",
+    SNOWPLOW_SERVER_URL: "com-ltk-prod1.collector.snplow.net",
+    DATADOG: {
+        applicationId: "fc7af0fc-afad-42bc-bb5b-5737179cd49a",
+        clientToken: "pubbeed22139f0ad1cf524658879b7c1dce",
+        site: "datadoghq.com",
+        service: "rsthecom"
+    },
+    ZENDESK_KEY: "293dcb06-bf4f-4c19-b80b-d8e54d206aba"
+};

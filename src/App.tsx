@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { LTKAuthProvider } from './contexts/LTKAuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Earnings from './pages/Earnings';
