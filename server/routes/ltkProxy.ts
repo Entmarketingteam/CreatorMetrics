@@ -96,7 +96,7 @@ router.get('/analytics/contributors', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
     }
 
-    const result = await proxyLTKRequest('/analytics/v1/contributors', accessToken, idToken);
+    const result = await proxyLTKRequest('/api/creator-analytics/v1/contributors', accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -114,7 +114,7 @@ router.get('/analytics/hero-chart', async (req: Request, res: Response) => {
     }
 
     const queryParams = new URLSearchParams(req.query as any).toString();
-    const endpoint = `/analytics/v1/hero_chart${queryParams ? `?${queryParams}` : ''}`;
+    const endpoint = `/api/creator-analytics/v1/hero_chart${queryParams ? `?${queryParams}` : ''}`;
     
     const result = await proxyLTKRequest(endpoint, accessToken, idToken);
     res.status(result.status).json(result.data);
@@ -133,7 +133,7 @@ router.get('/analytics/performance-summary', async (req: Request, res: Response)
     }
 
     const queryParams = new URLSearchParams(req.query as any).toString();
-    const endpoint = `/analytics/v1/performance_summary${queryParams ? `?${queryParams}` : ''}`;
+    const endpoint = `/api/creator-analytics/v1/performance_summary${queryParams ? `?${queryParams}` : ''}`;
     
     const result = await proxyLTKRequest(endpoint, accessToken, idToken);
     res.status(result.status).json(result.data);
@@ -152,7 +152,7 @@ router.get('/analytics/performance-stats', async (req: Request, res: Response) =
     }
 
     const queryParams = new URLSearchParams(req.query as any).toString();
-    const endpoint = `/analytics/v1/performance_stats${queryParams ? `?${queryParams}` : ''}`;
+    const endpoint = `/api/creator-analytics/v1/performance_stats${queryParams ? `?${queryParams}` : ''}`;
     
     const result = await proxyLTKRequest(endpoint, accessToken, idToken);
     res.status(result.status).json(result.data);
@@ -171,7 +171,7 @@ router.get('/analytics/top-performers', async (req: Request, res: Response) => {
     }
 
     const queryParams = new URLSearchParams(req.query as any).toString();
-    const endpoint = `/analytics/v1/top_performers${queryParams ? `?${queryParams}` : ''}`;
+    const endpoint = `/api/creator-analytics/v1/top_performers${queryParams ? `?${queryParams}` : ''}`;
     
     const result = await proxyLTKRequest(endpoint, accessToken, idToken);
     res.status(result.status).json(result.data);
@@ -190,7 +190,7 @@ router.get('/analytics/items-sold', async (req: Request, res: Response) => {
     }
 
     const queryParams = new URLSearchParams(req.query as any).toString();
-    const endpoint = `/analytics/v1/items_sold${queryParams ? `?${queryParams}` : ''}`;
+    const endpoint = `/api/creator-analytics/v1/items_sold${queryParams ? `?${queryParams}` : ''}`;
     
     const result = await proxyLTKRequest(endpoint, accessToken, idToken);
     res.status(result.status).json(result.data);
@@ -208,7 +208,7 @@ router.get('/analytics/commissions-summary', async (req: Request, res: Response)
       return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
     }
 
-    const result = await proxyLTKRequest('/analytics/v1/commissions_summary', accessToken, idToken);
+    const result = await proxyLTKRequest('/api/creator-analytics/v1/commissions_summary', accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
