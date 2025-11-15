@@ -45,6 +45,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/earnings', icon: DollarSign, label: 'Earnings' },
     { path: '/products', icon: Package, label: 'Products' },
     { path: '/content', icon: Image, label: 'Content' },
+    { path: '/instagram-posts', icon: Instagram, label: 'Instagram Posts' },
     { path: '/insights', icon: Lightbulb, label: 'Insights' },
     { path: '/platforms', icon: Link2, label: 'Platforms' },
     { path: '/import', icon: Upload, label: 'LTK Import' },

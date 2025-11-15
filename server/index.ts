@@ -4,6 +4,7 @@ import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import ltkProxyRoutes from './routes/ltkProxy.js';
+import instagramPostsRoutes from './routes/instagramPosts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,6 +31,9 @@ app.get('/api/health', (req, res) => {
 
 // LTK Proxy routes
 app.use('/api/ltk', ltkProxyRoutes);
+
+// Instagram Posts routes
+app.use('/api/instagram-posts', instagramPostsRoutes);
 
 // Production: Serve static files from dist folder
 if (isProd) {
