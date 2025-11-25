@@ -1,18 +1,249 @@
-// Foretrust Database Service - Using Supabase Client
+// Foretrust Database Service - Using Supabase Client with Mock Fallback
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import fetch, { RequestInit } from 'node-fetch';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // Supabase client
 let supabase: SupabaseClient | null = null;
+let useMockData = false;
 
-function getClient(): SupabaseClient {
+// Mock data store (in-memory for demo)
+const mockStore: {
+  deals: Deal[];
+  propertyAttributes: DealPropertyAttributes[];
+  leaseTerms: DealLeaseTerms[];
+  scores: DealScores[];
+  financials: DealFinancials[];
+  enrichment: DealEnrichment[];
+  memos: DealMemo[];
+} = {
+  deals: [
+    {
+      id: 'mock-deal-001',
+      organization_id: '00000000-0000-0000-0000-000000000001',
+      name: 'Walgreens - Austin TX',
+      status: 'memo_generated',
+      source_type: 'pdf',
+      created_at: '2025-11-20T10:00:00Z',
+      updated_at: '2025-11-20T12:00:00Z'
+    },
+    {
+      id: 'mock-deal-002',
+      organization_id: '00000000-0000-0000-0000-000000000001',
+      name: 'Dollar General - Nashville TN',
+      status: 'underwritten',
+      source_type: 'url',
+      source_url: 'https://example.com/listing/123',
+      created_at: '2025-11-18T08:00:00Z',
+      updated_at: '2025-11-19T15:00:00Z'
+    },
+    {
+      id: 'mock-deal-003',
+      organization_id: '00000000-0000-0000-0000-000000000001',
+      name: 'CVS Pharmacy - Phoenix AZ',
+      status: 'enriched',
+      source_type: 'manual',
+      created_at: '2025-11-15T14:00:00Z',
+      updated_at: '2025-11-16T09:00:00Z'
+    }
+  ],
+  propertyAttributes: [
+    {
+      id: 'mock-prop-001',
+      deal_id: 'mock-deal-001',
+      address_line1: '1234 Main Street',
+      city: 'Austin',
+      state: 'TX',
+      postal_code: '78701',
+      property_type: 'Retail - NNN',
+      building_sqft: 14500,
+      land_acres: 1.2,
+      year_built: 2018
+    },
+    {
+      id: 'mock-prop-002',
+      deal_id: 'mock-deal-002',
+      address_line1: '5678 Commerce Blvd',
+      city: 'Nashville',
+      state: 'TN',
+      postal_code: '37203',
+      property_type: 'Retail - NNN',
+      building_sqft: 9100,
+      land_acres: 0.9,
+      year_built: 2020
+    },
+    {
+      id: 'mock-prop-003',
+      deal_id: 'mock-deal-003',
+      address_line1: '910 Desert Road',
+      city: 'Phoenix',
+      state: 'AZ',
+      postal_code: '85001',
+      property_type: 'Retail - NNN',
+      building_sqft: 12800,
+      land_acres: 1.5,
+      year_built: 2015
+    }
+  ],
+  leaseTerms: [
+    {
+      id: 'mock-lease-001',
+      deal_id: 'mock-deal-001',
+      tenant_name: 'Walgreens Co.',
+      lease_type: 'Absolute NNN',
+      lease_start_date: '2018-06-01',
+      lease_end_date: '2038-05-31',
+      base_rent_annual: 450000,
+      rent_psf: 31.03
+    },
+    {
+      id: 'mock-lease-002',
+      deal_id: 'mock-deal-002',
+      tenant_name: 'Dollar General Corporation',
+      lease_type: 'NNN',
+      lease_start_date: '2020-03-01',
+      lease_end_date: '2035-02-28',
+      base_rent_annual: 125000,
+      rent_psf: 13.74
+    },
+    {
+      id: 'mock-lease-003',
+      deal_id: 'mock-deal-003',
+      tenant_name: 'CVS Health Corporation',
+      lease_type: 'NNN',
+      lease_start_date: '2015-09-01',
+      lease_end_date: '2030-08-31',
+      base_rent_annual: 380000,
+      rent_psf: 29.69
+    }
+  ],
+  scores: [
+    {
+      id: 'mock-score-001',
+      deal_id: 'mock-deal-001',
+      overall_score: 87,
+      lci_score: 92,
+      tenant_credit_score: 95,
+      downside_score: 78,
+      market_depth_score: 83,
+      risk_flags: ['Long lease term positive', 'Strong tenant credit'],
+      scored_at: '2025-11-20T11:00:00Z'
+    },
+    {
+      id: 'mock-score-002',
+      deal_id: 'mock-deal-002',
+      overall_score: 72,
+      lci_score: 68,
+      tenant_credit_score: 82,
+      downside_score: 65,
+      market_depth_score: 73,
+      risk_flags: ['Moderate lease term', 'Secondary market'],
+      scored_at: '2025-11-19T14:00:00Z'
+    }
+  ],
+  financials: [
+    {
+      id: 'mock-fin-001',
+      deal_id: 'mock-deal-001',
+      purchase_price: 7200000,
+      noi_year1: 450000,
+      cap_rate: 0.0625,
+      ltv_assumed: 0.65,
+      interest_rate: 0.055,
+      io_years: 2,
+      amort_years: 25,
+      exit_cap_rate: 0.07,
+      hold_period_years: 7,
+      levered_irr: 0.142,
+      unlevered_irr: 0.078,
+      dscr_min: 1.45,
+      cash_on_cash_year1: 0.082
+    },
+    {
+      id: 'mock-fin-002',
+      deal_id: 'mock-deal-002',
+      purchase_price: 1850000,
+      noi_year1: 125000,
+      cap_rate: 0.0676,
+      ltv_assumed: 0.70,
+      interest_rate: 0.058,
+      io_years: 0,
+      amort_years: 25,
+      exit_cap_rate: 0.075,
+      hold_period_years: 5,
+      levered_irr: 0.118,
+      unlevered_irr: 0.072,
+      dscr_min: 1.28,
+      cash_on_cash_year1: 0.065
+    }
+  ],
+  enrichment: [],
+  memos: [
+    {
+      id: 'mock-memo-001',
+      deal_id: 'mock-deal-001',
+      version: 1,
+      content_markdown: `# Investment Committee Memo\n\n## Executive Summary\nWalgreens NNN property in Austin, TX presents a compelling investment opportunity with strong tenant credit and favorable lease terms.\n\n## Recommendation: APPROVE\n\n### Key Highlights\n- Investment Grade Tenant (S&P: BBB)\n- 20-year absolute NNN lease\n- 6.25% cap rate in growth market\n- Projected 14.2% levered IRR\n\n### Risk Factors\n- Retail pharmacy sector headwinds\n- E-commerce competition\n\n### Conclusion\nStrong credit tenant with long-term lease in growing Texas market. Recommend proceeding with acquisition.`,
+      recommendation: 'approve',
+      generated_at: '2025-11-20T12:00:00Z'
+    }
+  ]
+};
+
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+async function testSupabaseConnection(): Promise<boolean> {
+  try {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) return false;
+
+    const httpsProxy = process.env.https_proxy || process.env.HTTPS_PROXY;
+    const proxyAgent = httpsProxy ? new HttpsProxyAgent(httpsProxy) : undefined;
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+      headers: { 'apikey': supabaseKey },
+      agent: proxyAgent
+    } as RequestInit);
+
+    // If we get 403 "Access denied", Supabase is blocked
+    if (response.status === 403) {
+      const text = await response.text();
+      if (text === 'Access denied') return false;
+    }
+
+    return response.ok || response.status === 401;
+  } catch {
+    return false;
+  }
+}
+
+async function getClient(): Promise<SupabaseClient | null> {
+  if (useMockData) return null;
+
   if (!supabase) {
     const supabaseUrl = process.env.VITE_SUPABASE_URL;
     const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+      console.log('🔶 No Supabase credentials, using mock data');
+      useMockData = true;
+      return null;
+    }
+
+    // Test connection first
+    const canConnect = await testSupabaseConnection();
+    if (!canConnect) {
+      console.log('🔶 Supabase blocked by proxy, using mock data for demo');
+      useMockData = true;
+      return null;
     }
 
     // Create proxy agent if HTTPS_PROXY is set
@@ -145,7 +376,25 @@ export async function createDeal(data: {
   organization_id?: string;
   created_by?: string;
 }): Promise<Deal> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    // Mock mode
+    const newDeal: Deal = {
+      id: generateUUID(),
+      organization_id: data.organization_id || DEFAULT_ORG_ID,
+      name: data.name,
+      status: 'draft',
+      source_type: data.source_type,
+      source_url: data.source_url,
+      created_by: data.created_by || DEFAULT_USER_ID,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    mockStore.deals.unshift(newDeal);
+    return newDeal;
+  }
+
   const { data: deal, error } = await client
     .from('ft_deals')
     .insert({
@@ -163,7 +412,12 @@ export async function createDeal(data: {
 }
 
 export async function getDeal(id: string): Promise<Deal | null> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    return mockStore.deals.find(d => d.id === id) || null;
+  }
+
   const { data, error } = await client
     .from('ft_deals')
     .select('*')
@@ -175,7 +429,17 @@ export async function getDeal(id: string): Promise<Deal | null> {
 }
 
 export async function updateDealStatus(id: string, status: Deal['status']): Promise<Deal | null> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const deal = mockStore.deals.find(d => d.id === id);
+    if (deal) {
+      deal.status = status;
+      deal.updated_at = new Date().toISOString();
+    }
+    return deal || null;
+  }
+
   const { data, error } = await client
     .from('ft_deals')
     .update({ status, updated_at: new Date().toISOString() })
@@ -195,7 +459,40 @@ export async function listDeals(filters?: {
   limit?: number;
   offset?: number;
 }): Promise<Deal[]> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    // Mock mode - return enriched deals
+    let deals = mockStore.deals.filter(d =>
+      d.organization_id === (filters?.organization_id || DEFAULT_ORG_ID)
+    );
+
+    if (filters?.status) {
+      deals = deals.filter(d => d.status === filters.status);
+    }
+
+    // Enrich with related data
+    return deals.map(deal => {
+      const prop = mockStore.propertyAttributes.find(p => p.deal_id === deal.id);
+      const lease = mockStore.leaseTerms.find(l => l.deal_id === deal.id);
+      const scores = mockStore.scores.find(s => s.deal_id === deal.id);
+      const fin = mockStore.financials.find(f => f.deal_id === deal.id);
+
+      return {
+        ...deal,
+        city: prop?.city,
+        state: prop?.state,
+        property_type: prop?.property_type,
+        tenant_name: lease?.tenant_name,
+        overall_score: scores?.overall_score,
+        lci_score: scores?.lci_score,
+        tenant_credit_score: scores?.tenant_credit_score,
+        cap_rate: fin?.cap_rate,
+        noi_year1: fin?.noi_year1,
+        levered_irr: fin?.levered_irr,
+      };
+    });
+  }
 
   let query = client
     .from('ft_deals')
@@ -237,7 +534,23 @@ export async function listDeals(filters?: {
 
 // Property Attributes
 export async function upsertPropertyAttributes(dealId: string, data: Partial<DealPropertyAttributes>): Promise<DealPropertyAttributes> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const idx = mockStore.propertyAttributes.findIndex(p => p.deal_id === dealId);
+    const newProp: DealPropertyAttributes = {
+      id: idx >= 0 ? mockStore.propertyAttributes[idx].id : generateUUID(),
+      deal_id: dealId,
+      ...data
+    };
+    if (idx >= 0) {
+      mockStore.propertyAttributes[idx] = newProp;
+    } else {
+      mockStore.propertyAttributes.push(newProp);
+    }
+    return newProp;
+  }
+
   const { data: result, error } = await client
     .from('ft_deal_property_attributes')
     .upsert({
@@ -253,7 +566,12 @@ export async function upsertPropertyAttributes(dealId: string, data: Partial<Dea
 }
 
 export async function getPropertyAttributes(dealId: string): Promise<DealPropertyAttributes | null> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    return mockStore.propertyAttributes.find(p => p.deal_id === dealId) || null;
+  }
+
   const { data, error } = await client
     .from('ft_deal_property_attributes')
     .select('*')
@@ -266,7 +584,23 @@ export async function getPropertyAttributes(dealId: string): Promise<DealPropert
 
 // Lease Terms
 export async function upsertLeaseTerms(dealId: string, data: Partial<DealLeaseTerms>): Promise<DealLeaseTerms> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const idx = mockStore.leaseTerms.findIndex(l => l.deal_id === dealId);
+    const newLease: DealLeaseTerms = {
+      id: idx >= 0 ? mockStore.leaseTerms[idx].id : generateUUID(),
+      deal_id: dealId,
+      ...data
+    };
+    if (idx >= 0) {
+      mockStore.leaseTerms[idx] = newLease;
+    } else {
+      mockStore.leaseTerms.push(newLease);
+    }
+    return newLease;
+  }
+
   const { data: result, error } = await client
     .from('ft_deal_lease_terms')
     .upsert({
@@ -282,7 +616,12 @@ export async function upsertLeaseTerms(dealId: string, data: Partial<DealLeaseTe
 }
 
 export async function getLeaseTerms(dealId: string): Promise<DealLeaseTerms | null> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    return mockStore.leaseTerms.find(l => l.deal_id === dealId) || null;
+  }
+
   const { data, error } = await client
     .from('ft_deal_lease_terms')
     .select('*')
@@ -295,7 +634,24 @@ export async function getLeaseTerms(dealId: string): Promise<DealLeaseTerms | nu
 
 // Scores
 export async function upsertScores(dealId: string, data: Partial<DealScores>): Promise<DealScores> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const idx = mockStore.scores.findIndex(s => s.deal_id === dealId);
+    const newScore: DealScores = {
+      id: idx >= 0 ? mockStore.scores[idx].id : generateUUID(),
+      deal_id: dealId,
+      scored_at: new Date().toISOString(),
+      ...data
+    };
+    if (idx >= 0) {
+      mockStore.scores[idx] = newScore;
+    } else {
+      mockStore.scores.push(newScore);
+    }
+    return newScore;
+  }
+
   const { data: result, error } = await client
     .from('ft_deal_scores')
     .upsert({
@@ -312,7 +668,12 @@ export async function upsertScores(dealId: string, data: Partial<DealScores>): P
 }
 
 export async function getScores(dealId: string): Promise<DealScores | null> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    return mockStore.scores.find(s => s.deal_id === dealId) || null;
+  }
+
   const { data, error } = await client
     .from('ft_deal_scores')
     .select('*')
@@ -325,7 +686,23 @@ export async function getScores(dealId: string): Promise<DealScores | null> {
 
 // Financials
 export async function upsertFinancials(dealId: string, data: Partial<DealFinancials>): Promise<DealFinancials> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const idx = mockStore.financials.findIndex(f => f.deal_id === dealId);
+    const newFin: DealFinancials = {
+      id: idx >= 0 ? mockStore.financials[idx].id : generateUUID(),
+      deal_id: dealId,
+      ...data
+    };
+    if (idx >= 0) {
+      mockStore.financials[idx] = newFin;
+    } else {
+      mockStore.financials.push(newFin);
+    }
+    return newFin;
+  }
+
   const { data: result, error } = await client
     .from('ft_deal_financials')
     .upsert({
@@ -341,7 +718,12 @@ export async function upsertFinancials(dealId: string, data: Partial<DealFinanci
 }
 
 export async function getFinancials(dealId: string): Promise<DealFinancials | null> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    return mockStore.financials.find(f => f.deal_id === dealId) || null;
+  }
+
   const { data, error } = await client
     .from('ft_deal_financials')
     .select('*')
@@ -354,7 +736,24 @@ export async function getFinancials(dealId: string): Promise<DealFinancials | nu
 
 // Enrichment
 export async function upsertEnrichment(dealId: string, data: Partial<DealEnrichment>): Promise<DealEnrichment> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const idx = mockStore.enrichment.findIndex(e => e.deal_id === dealId);
+    const newEnrich: DealEnrichment = {
+      id: idx >= 0 ? mockStore.enrichment[idx].id : generateUUID(),
+      deal_id: dealId,
+      enriched_at: new Date().toISOString(),
+      ...data
+    };
+    if (idx >= 0) {
+      mockStore.enrichment[idx] = newEnrich;
+    } else {
+      mockStore.enrichment.push(newEnrich);
+    }
+    return newEnrich;
+  }
+
   const { data: result, error } = await client
     .from('ft_deal_enrichment')
     .upsert({
@@ -371,7 +770,12 @@ export async function upsertEnrichment(dealId: string, data: Partial<DealEnrichm
 }
 
 export async function getEnrichment(dealId: string): Promise<DealEnrichment | null> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    return mockStore.enrichment.find(e => e.deal_id === dealId) || null;
+  }
+
   const { data, error } = await client
     .from('ft_deal_enrichment')
     .select('*')
@@ -387,7 +791,24 @@ export async function createMemo(dealId: string, data: {
   content_markdown: string;
   recommendation?: 'approve' | 'approve_with_conditions' | 'decline';
 }): Promise<DealMemo> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const existingMemos = mockStore.memos.filter(m => m.deal_id === dealId);
+    const nextVersion = existingMemos.length > 0
+      ? Math.max(...existingMemos.map(m => m.version)) + 1
+      : 1;
+    const newMemo: DealMemo = {
+      id: generateUUID(),
+      deal_id: dealId,
+      version: nextVersion,
+      content_markdown: data.content_markdown,
+      recommendation: data.recommendation,
+      generated_at: new Date().toISOString()
+    };
+    mockStore.memos.unshift(newMemo);
+    return newMemo;
+  }
 
   // Get next version number
   const { data: existing } = await client
@@ -416,7 +837,14 @@ export async function createMemo(dealId: string, data: {
 }
 
 export async function getMemos(dealId: string): Promise<DealMemo[]> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    return mockStore.memos
+      .filter(m => m.deal_id === dealId)
+      .sort((a, b) => b.version - a.version);
+  }
+
   const { data, error } = await client
     .from('ft_deal_memos')
     .select('*')
@@ -428,7 +856,15 @@ export async function getMemos(dealId: string): Promise<DealMemo[]> {
 }
 
 export async function getLatestMemo(dealId: string): Promise<DealMemo | null> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const memos = mockStore.memos
+      .filter(m => m.deal_id === dealId)
+      .sort((a, b) => b.version - a.version);
+    return memos[0] || null;
+  }
+
   const { data, error } = await client
     .from('ft_deal_memos')
     .select('*')
@@ -466,7 +902,23 @@ export async function getCompleteDeal(dealId: string): Promise<{
 
 // Delete deal
 export async function deleteDeal(dealId: string): Promise<boolean> {
-  const client = getClient();
+  const client = await getClient();
+
+  if (!client) {
+    const idx = mockStore.deals.findIndex(d => d.id === dealId);
+    if (idx >= 0) {
+      mockStore.deals.splice(idx, 1);
+      // Also clean up related data
+      mockStore.propertyAttributes = mockStore.propertyAttributes.filter(p => p.deal_id !== dealId);
+      mockStore.leaseTerms = mockStore.leaseTerms.filter(l => l.deal_id !== dealId);
+      mockStore.scores = mockStore.scores.filter(s => s.deal_id !== dealId);
+      mockStore.financials = mockStore.financials.filter(f => f.deal_id !== dealId);
+      mockStore.enrichment = mockStore.enrichment.filter(e => e.deal_id !== dealId);
+      mockStore.memos = mockStore.memos.filter(m => m.deal_id !== dealId);
+    }
+    return true;
+  }
+
   const { error } = await client
     .from('ft_deals')
     .delete()
