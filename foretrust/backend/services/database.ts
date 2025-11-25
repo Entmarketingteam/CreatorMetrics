@@ -1,18 +1,39 @@
-// Foretrust Database Service
-import pg from 'pg';
-const { Pool } = pg;
+// Foretrust Database Service - Using Supabase Client
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import fetch, { RequestInit } from 'node-fetch';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
-// Database connection pool
-let pool: pg.Pool | null = null;
+// Supabase client
+let supabase: SupabaseClient | null = null;
 
-function getPool(): pg.Pool {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+function getClient(): SupabaseClient {
+  if (!supabase) {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+    }
+
+    // Create proxy agent if HTTPS_PROXY is set
+    const httpsProxy = process.env.https_proxy || process.env.HTTPS_PROXY;
+    const proxyAgent = httpsProxy ? new HttpsProxyAgent(httpsProxy) : undefined;
+
+    // Custom fetch that uses the proxy
+    const customFetch = (url: string | URL, init?: RequestInit) => {
+      return fetch(url, {
+        ...init,
+        agent: proxyAgent
+      } as RequestInit);
+    };
+
+    supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        fetch: customFetch as unknown as typeof globalThis.fetch
+      }
     });
   }
-  return pool;
+  return supabase;
 }
 
 // Types
@@ -24,8 +45,8 @@ export interface Deal {
   source_type: 'pdf' | 'url' | 'manual';
   source_url?: string;
   created_by?: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DealPropertyAttributes {
@@ -72,7 +93,7 @@ export interface DealScores {
   market_depth_score?: number;
   overall_score?: number;
   risk_flags?: string[];
-  scored_at?: Date;
+  scored_at?: string;
 }
 
 export interface DealFinancials {
@@ -100,7 +121,7 @@ export interface DealEnrichment {
   geocode?: object;
   market?: object;
   tenant?: object;
-  enriched_at: Date;
+  enriched_at: string;
 }
 
 export interface DealMemo {
@@ -109,7 +130,7 @@ export interface DealMemo {
   version: number;
   content_markdown: string;
   recommendation?: 'approve' | 'approve_with_conditions' | 'decline';
-  generated_at: Date;
+  generated_at: string;
 }
 
 // Default org/user for MVP
@@ -124,38 +145,46 @@ export async function createDeal(data: {
   organization_id?: string;
   created_by?: string;
 }): Promise<Deal> {
-  const db = getPool();
-  const result = await db.query<Deal>(
-    `INSERT INTO ft_deals (name, source_type, source_url, organization_id, created_by)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING *`,
-    [
-      data.name,
-      data.source_type,
-      data.source_url || null,
-      data.organization_id || DEFAULT_ORG_ID,
-      data.created_by || DEFAULT_USER_ID
-    ]
-  );
-  return result.rows[0];
+  const client = getClient();
+  const { data: deal, error } = await client
+    .from('ft_deals')
+    .insert({
+      name: data.name,
+      source_type: data.source_type,
+      source_url: data.source_url || null,
+      organization_id: data.organization_id || DEFAULT_ORG_ID,
+      created_by: data.created_by || DEFAULT_USER_ID
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return deal;
 }
 
 export async function getDeal(id: string): Promise<Deal | null> {
-  const db = getPool();
-  const result = await db.query<Deal>(
-    'SELECT * FROM ft_deals WHERE id = $1',
-    [id]
-  );
-  return result.rows[0] || null;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deals')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
 }
 
 export async function updateDealStatus(id: string, status: Deal['status']): Promise<Deal | null> {
-  const db = getPool();
-  const result = await db.query<Deal>(
-    `UPDATE ft_deals SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-    [status, id]
-  );
-  return result.rows[0] || null;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deals')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 export async function listDeals(filters?: {
@@ -166,246 +195,191 @@ export async function listDeals(filters?: {
   limit?: number;
   offset?: number;
 }): Promise<Deal[]> {
-  const db = getPool();
-  let query = `
-    SELECT d.*,
-           p.city, p.state, p.property_type,
-           l.tenant_name,
-           s.overall_score, s.lci_score, s.tenant_credit_score,
-           f.cap_rate, f.noi_year1, f.levered_irr
-    FROM ft_deals d
-    LEFT JOIN ft_deal_property_attributes p ON d.id = p.deal_id
-    LEFT JOIN ft_deal_lease_terms l ON d.id = l.deal_id
-    LEFT JOIN ft_deal_scores s ON d.id = s.deal_id
-    LEFT JOIN ft_deal_financials f ON d.id = f.deal_id
-    WHERE d.organization_id = $1
-  `;
-  const params: (string | number)[] = [filters?.organization_id || DEFAULT_ORG_ID];
-  let paramIndex = 2;
+  const client = getClient();
+
+  let query = client
+    .from('ft_deals')
+    .select(`
+      *,
+      ft_deal_property_attributes(city, state, property_type),
+      ft_deal_lease_terms(tenant_name),
+      ft_deal_scores(overall_score, lci_score, tenant_credit_score),
+      ft_deal_financials(cap_rate, noi_year1, levered_irr)
+    `)
+    .eq('organization_id', filters?.organization_id || DEFAULT_ORG_ID)
+    .order('created_at', { ascending: false });
 
   if (filters?.status) {
-    query += ` AND d.status = $${paramIndex++}`;
-    params.push(filters.status);
+    query = query.eq('status', filters.status);
   }
-  if (filters?.tenant) {
-    query += ` AND l.tenant_name ILIKE $${paramIndex++}`;
-    params.push(`%${filters.tenant}%`);
-  }
-  if (filters?.market) {
-    query += ` AND (p.city ILIKE $${paramIndex} OR p.state ILIKE $${paramIndex++})`;
-    params.push(`%${filters.market}%`);
-  }
-
-  query += ' ORDER BY d.created_at DESC';
-
   if (filters?.limit) {
-    query += ` LIMIT $${paramIndex++}`;
-    params.push(filters.limit);
-  }
-  if (filters?.offset) {
-    query += ` OFFSET $${paramIndex++}`;
-    params.push(filters.offset);
+    query = query.limit(filters.limit);
   }
 
-  const result = await db.query(query, params);
-  return result.rows;
+  const { data, error } = await query;
+  if (error) throw error;
+
+  // Flatten joined data
+  return (data || []).map((d: Record<string, unknown>) => ({
+    ...d,
+    city: (d.ft_deal_property_attributes as Record<string, unknown>)?.city,
+    state: (d.ft_deal_property_attributes as Record<string, unknown>)?.state,
+    property_type: (d.ft_deal_property_attributes as Record<string, unknown>)?.property_type,
+    tenant_name: (d.ft_deal_lease_terms as Record<string, unknown>)?.tenant_name,
+    overall_score: (d.ft_deal_scores as Record<string, unknown>)?.overall_score,
+    lci_score: (d.ft_deal_scores as Record<string, unknown>)?.lci_score,
+    tenant_credit_score: (d.ft_deal_scores as Record<string, unknown>)?.tenant_credit_score,
+    cap_rate: (d.ft_deal_financials as Record<string, unknown>)?.cap_rate,
+    noi_year1: (d.ft_deal_financials as Record<string, unknown>)?.noi_year1,
+    levered_irr: (d.ft_deal_financials as Record<string, unknown>)?.levered_irr,
+  }));
 }
 
 // Property Attributes
 export async function upsertPropertyAttributes(dealId: string, data: Partial<DealPropertyAttributes>): Promise<DealPropertyAttributes> {
-  const db = getPool();
-  const result = await db.query<DealPropertyAttributes>(
-    `INSERT INTO ft_deal_property_attributes
-     (deal_id, address_line1, city, state, postal_code, latitude, longitude,
-      property_type, building_sqft, land_acres, year_built, clear_height_ft,
-      dock_doors, drive_in_doors, zoning, parcel_number, last_sale_date, last_sale_price)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-     ON CONFLICT (deal_id) DO UPDATE SET
-       address_line1 = COALESCE(EXCLUDED.address_line1, ft_deal_property_attributes.address_line1),
-       city = COALESCE(EXCLUDED.city, ft_deal_property_attributes.city),
-       state = COALESCE(EXCLUDED.state, ft_deal_property_attributes.state),
-       postal_code = COALESCE(EXCLUDED.postal_code, ft_deal_property_attributes.postal_code),
-       latitude = COALESCE(EXCLUDED.latitude, ft_deal_property_attributes.latitude),
-       longitude = COALESCE(EXCLUDED.longitude, ft_deal_property_attributes.longitude),
-       property_type = COALESCE(EXCLUDED.property_type, ft_deal_property_attributes.property_type),
-       building_sqft = COALESCE(EXCLUDED.building_sqft, ft_deal_property_attributes.building_sqft),
-       land_acres = COALESCE(EXCLUDED.land_acres, ft_deal_property_attributes.land_acres),
-       year_built = COALESCE(EXCLUDED.year_built, ft_deal_property_attributes.year_built),
-       clear_height_ft = COALESCE(EXCLUDED.clear_height_ft, ft_deal_property_attributes.clear_height_ft),
-       dock_doors = COALESCE(EXCLUDED.dock_doors, ft_deal_property_attributes.dock_doors),
-       drive_in_doors = COALESCE(EXCLUDED.drive_in_doors, ft_deal_property_attributes.drive_in_doors),
-       zoning = COALESCE(EXCLUDED.zoning, ft_deal_property_attributes.zoning),
-       updated_at = NOW()
-     RETURNING *`,
-    [
-      dealId, data.address_line1, data.city, data.state, data.postal_code,
-      data.latitude, data.longitude, data.property_type, data.building_sqft,
-      data.land_acres, data.year_built, data.clear_height_ft, data.dock_doors,
-      data.drive_in_doors, data.zoning, data.parcel_number, data.last_sale_date,
-      data.last_sale_price
-    ]
-  );
-  return result.rows[0];
+  const client = getClient();
+  const { data: result, error } = await client
+    .from('ft_deal_property_attributes')
+    .upsert({
+      deal_id: dealId,
+      ...data,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'deal_id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result;
 }
 
 export async function getPropertyAttributes(dealId: string): Promise<DealPropertyAttributes | null> {
-  const db = getPool();
-  const result = await db.query<DealPropertyAttributes>(
-    'SELECT * FROM ft_deal_property_attributes WHERE deal_id = $1',
-    [dealId]
-  );
-  return result.rows[0] || null;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deal_property_attributes')
+    .select('*')
+    .eq('deal_id', dealId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
 }
 
 // Lease Terms
 export async function upsertLeaseTerms(dealId: string, data: Partial<DealLeaseTerms>): Promise<DealLeaseTerms> {
-  const db = getPool();
-  const result = await db.query<DealLeaseTerms>(
-    `INSERT INTO ft_deal_lease_terms
-     (deal_id, tenant_name, lease_type, lease_start_date, lease_end_date,
-      base_rent_annual, rent_psf, rent_escalations, options)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-     ON CONFLICT (deal_id) DO UPDATE SET
-       tenant_name = COALESCE(EXCLUDED.tenant_name, ft_deal_lease_terms.tenant_name),
-       lease_type = COALESCE(EXCLUDED.lease_type, ft_deal_lease_terms.lease_type),
-       lease_start_date = COALESCE(EXCLUDED.lease_start_date, ft_deal_lease_terms.lease_start_date),
-       lease_end_date = COALESCE(EXCLUDED.lease_end_date, ft_deal_lease_terms.lease_end_date),
-       base_rent_annual = COALESCE(EXCLUDED.base_rent_annual, ft_deal_lease_terms.base_rent_annual),
-       rent_psf = COALESCE(EXCLUDED.rent_psf, ft_deal_lease_terms.rent_psf),
-       rent_escalations = COALESCE(EXCLUDED.rent_escalations, ft_deal_lease_terms.rent_escalations),
-       options = COALESCE(EXCLUDED.options, ft_deal_lease_terms.options),
-       updated_at = NOW()
-     RETURNING *`,
-    [
-      dealId, data.tenant_name, data.lease_type, data.lease_start_date,
-      data.lease_end_date, data.base_rent_annual, data.rent_psf,
-      JSON.stringify(data.rent_escalations || []),
-      JSON.stringify(data.options || [])
-    ]
-  );
-  return result.rows[0];
+  const client = getClient();
+  const { data: result, error } = await client
+    .from('ft_deal_lease_terms')
+    .upsert({
+      deal_id: dealId,
+      ...data,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'deal_id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result;
 }
 
 export async function getLeaseTerms(dealId: string): Promise<DealLeaseTerms | null> {
-  const db = getPool();
-  const result = await db.query<DealLeaseTerms>(
-    'SELECT * FROM ft_deal_lease_terms WHERE deal_id = $1',
-    [dealId]
-  );
-  return result.rows[0] || null;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deal_lease_terms')
+    .select('*')
+    .eq('deal_id', dealId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
 }
 
 // Scores
 export async function upsertScores(dealId: string, data: Partial<DealScores>): Promise<DealScores> {
-  const db = getPool();
-  const result = await db.query<DealScores>(
-    `INSERT INTO ft_deal_scores
-     (deal_id, lci_score, tenant_credit_score, downside_score, market_depth_score,
-      overall_score, risk_flags, scored_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-     ON CONFLICT (deal_id) DO UPDATE SET
-       lci_score = EXCLUDED.lci_score,
-       tenant_credit_score = EXCLUDED.tenant_credit_score,
-       downside_score = EXCLUDED.downside_score,
-       market_depth_score = EXCLUDED.market_depth_score,
-       overall_score = EXCLUDED.overall_score,
-       risk_flags = EXCLUDED.risk_flags,
-       scored_at = NOW(),
-       updated_at = NOW()
-     RETURNING *`,
-    [
-      dealId, data.lci_score, data.tenant_credit_score, data.downside_score,
-      data.market_depth_score, data.overall_score, JSON.stringify(data.risk_flags || [])
-    ]
-  );
-  return result.rows[0];
+  const client = getClient();
+  const { data: result, error } = await client
+    .from('ft_deal_scores')
+    .upsert({
+      deal_id: dealId,
+      ...data,
+      scored_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'deal_id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result;
 }
 
 export async function getScores(dealId: string): Promise<DealScores | null> {
-  const db = getPool();
-  const result = await db.query<DealScores>(
-    'SELECT * FROM ft_deal_scores WHERE deal_id = $1',
-    [dealId]
-  );
-  return result.rows[0] || null;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deal_scores')
+    .select('*')
+    .eq('deal_id', dealId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
 }
 
 // Financials
 export async function upsertFinancials(dealId: string, data: Partial<DealFinancials>): Promise<DealFinancials> {
-  const db = getPool();
-  const result = await db.query<DealFinancials>(
-    `INSERT INTO ft_deal_financials
-     (deal_id, purchase_price, noi_year1, cap_rate, ltv_assumed, interest_rate,
-      io_years, amort_years, exit_cap_rate, hold_period_years, levered_irr,
-      unlevered_irr, dscr_min, cash_on_cash_year1, cash_on_cash_avg)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-     ON CONFLICT (deal_id) DO UPDATE SET
-       purchase_price = EXCLUDED.purchase_price,
-       noi_year1 = EXCLUDED.noi_year1,
-       cap_rate = EXCLUDED.cap_rate,
-       ltv_assumed = EXCLUDED.ltv_assumed,
-       interest_rate = EXCLUDED.interest_rate,
-       io_years = EXCLUDED.io_years,
-       amort_years = EXCLUDED.amort_years,
-       exit_cap_rate = EXCLUDED.exit_cap_rate,
-       hold_period_years = EXCLUDED.hold_period_years,
-       levered_irr = EXCLUDED.levered_irr,
-       unlevered_irr = EXCLUDED.unlevered_irr,
-       dscr_min = EXCLUDED.dscr_min,
-       cash_on_cash_year1 = EXCLUDED.cash_on_cash_year1,
-       cash_on_cash_avg = EXCLUDED.cash_on_cash_avg,
-       updated_at = NOW()
-     RETURNING *`,
-    [
-      dealId, data.purchase_price, data.noi_year1, data.cap_rate, data.ltv_assumed,
-      data.interest_rate, data.io_years, data.amort_years, data.exit_cap_rate,
-      data.hold_period_years, data.levered_irr, data.unlevered_irr, data.dscr_min,
-      data.cash_on_cash_year1, data.cash_on_cash_avg
-    ]
-  );
-  return result.rows[0];
+  const client = getClient();
+  const { data: result, error } = await client
+    .from('ft_deal_financials')
+    .upsert({
+      deal_id: dealId,
+      ...data,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'deal_id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result;
 }
 
 export async function getFinancials(dealId: string): Promise<DealFinancials | null> {
-  const db = getPool();
-  const result = await db.query<DealFinancials>(
-    'SELECT * FROM ft_deal_financials WHERE deal_id = $1',
-    [dealId]
-  );
-  return result.rows[0] || null;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deal_financials')
+    .select('*')
+    .eq('deal_id', dealId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
 }
 
 // Enrichment
 export async function upsertEnrichment(dealId: string, data: Partial<DealEnrichment>): Promise<DealEnrichment> {
-  const db = getPool();
-  const result = await db.query<DealEnrichment>(
-    `INSERT INTO ft_deal_enrichment
-     (deal_id, geocode, market, tenant, enriched_at)
-     VALUES ($1, $2, $3, $4, NOW())
-     ON CONFLICT (deal_id) DO UPDATE SET
-       geocode = EXCLUDED.geocode,
-       market = EXCLUDED.market,
-       tenant = EXCLUDED.tenant,
-       enriched_at = NOW(),
-       updated_at = NOW()
-     RETURNING *`,
-    [
-      dealId,
-      JSON.stringify(data.geocode || null),
-      JSON.stringify(data.market || null),
-      JSON.stringify(data.tenant || null)
-    ]
-  );
-  return result.rows[0];
+  const client = getClient();
+  const { data: result, error } = await client
+    .from('ft_deal_enrichment')
+    .upsert({
+      deal_id: dealId,
+      ...data,
+      enriched_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'deal_id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result;
 }
 
 export async function getEnrichment(dealId: string): Promise<DealEnrichment | null> {
-  const db = getPool();
-  const result = await db.query<DealEnrichment>(
-    'SELECT * FROM ft_deal_enrichment WHERE deal_id = $1',
-    [dealId]
-  );
-  return result.rows[0] || null;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deal_enrichment')
+    .select('*')
+    .eq('deal_id', dealId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
 }
 
 // Memos
@@ -413,41 +387,58 @@ export async function createMemo(dealId: string, data: {
   content_markdown: string;
   recommendation?: 'approve' | 'approve_with_conditions' | 'decline';
 }): Promise<DealMemo> {
-  const db = getPool();
+  const client = getClient();
 
   // Get next version number
-  const versionResult = await db.query<{ max_version: number }>(
-    'SELECT COALESCE(MAX(version), 0) as max_version FROM ft_deal_memos WHERE deal_id = $1',
-    [dealId]
-  );
-  const nextVersion = (versionResult.rows[0]?.max_version || 0) + 1;
+  const { data: existing } = await client
+    .from('ft_deal_memos')
+    .select('version')
+    .eq('deal_id', dealId)
+    .order('version', { ascending: false })
+    .limit(1);
 
-  const result = await db.query<DealMemo>(
-    `INSERT INTO ft_deal_memos
-     (deal_id, version, content_markdown, recommendation, generated_at)
-     VALUES ($1, $2, $3, $4, NOW())
-     RETURNING *`,
-    [dealId, nextVersion, data.content_markdown, data.recommendation]
-  );
-  return result.rows[0];
+  const nextVersion = (existing?.[0]?.version || 0) + 1;
+
+  const { data: result, error } = await client
+    .from('ft_deal_memos')
+    .insert({
+      deal_id: dealId,
+      version: nextVersion,
+      content_markdown: data.content_markdown,
+      recommendation: data.recommendation,
+      generated_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result;
 }
 
 export async function getMemos(dealId: string): Promise<DealMemo[]> {
-  const db = getPool();
-  const result = await db.query<DealMemo>(
-    'SELECT * FROM ft_deal_memos WHERE deal_id = $1 ORDER BY version DESC',
-    [dealId]
-  );
-  return result.rows;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deal_memos')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('version', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
 }
 
 export async function getLatestMemo(dealId: string): Promise<DealMemo | null> {
-  const db = getPool();
-  const result = await db.query<DealMemo>(
-    'SELECT * FROM ft_deal_memos WHERE deal_id = $1 ORDER BY version DESC LIMIT 1',
-    [dealId]
-  );
-  return result.rows[0] || null;
+  const client = getClient();
+  const { data, error } = await client
+    .from('ft_deal_memos')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('version', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
 }
 
 // Get complete deal data
@@ -475,10 +466,12 @@ export async function getCompleteDeal(dealId: string): Promise<{
 
 // Delete deal
 export async function deleteDeal(dealId: string): Promise<boolean> {
-  const db = getPool();
-  const result = await db.query(
-    'DELETE FROM ft_deals WHERE id = $1',
-    [dealId]
-  );
-  return (result.rowCount ?? 0) > 0;
+  const client = getClient();
+  const { error } = await client
+    .from('ft_deals')
+    .delete()
+    .eq('id', dealId);
+
+  if (error) throw error;
+  return true;
 }

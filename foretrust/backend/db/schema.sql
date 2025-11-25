@@ -223,3 +223,35 @@ ON CONFLICT DO NOTHING;
 INSERT INTO ft_users (id, organization_id, email, name, role) VALUES
   ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'demo@foretrust.com', 'Demo User', 'admin')
 ON CONFLICT DO NOTHING;
+
+-- MVP ONLY: Allow anon access for demo organization
+-- Remove these policies in production!
+CREATE POLICY "Anon can view demo org" ON ft_organizations
+  FOR SELECT USING (id = '00000000-0000-0000-0000-000000000001');
+
+CREATE POLICY "Anon can view demo users" ON ft_users
+  FOR SELECT USING (organization_id = '00000000-0000-0000-0000-000000000001');
+
+CREATE POLICY "Anon can manage demo deals" ON ft_deals
+  FOR ALL USING (organization_id = '00000000-0000-0000-0000-000000000001');
+
+CREATE POLICY "Anon can manage demo documents" ON ft_deal_documents
+  FOR ALL USING (deal_id IN (SELECT id FROM ft_deals WHERE organization_id = '00000000-0000-0000-0000-000000000001'));
+
+CREATE POLICY "Anon can manage demo property attrs" ON ft_deal_property_attributes
+  FOR ALL USING (deal_id IN (SELECT id FROM ft_deals WHERE organization_id = '00000000-0000-0000-0000-000000000001'));
+
+CREATE POLICY "Anon can manage demo lease terms" ON ft_deal_lease_terms
+  FOR ALL USING (deal_id IN (SELECT id FROM ft_deals WHERE organization_id = '00000000-0000-0000-0000-000000000001'));
+
+CREATE POLICY "Anon can manage demo scores" ON ft_deal_scores
+  FOR ALL USING (deal_id IN (SELECT id FROM ft_deals WHERE organization_id = '00000000-0000-0000-0000-000000000001'));
+
+CREATE POLICY "Anon can manage demo financials" ON ft_deal_financials
+  FOR ALL USING (deal_id IN (SELECT id FROM ft_deals WHERE organization_id = '00000000-0000-0000-0000-000000000001'));
+
+CREATE POLICY "Anon can manage demo enrichment" ON ft_deal_enrichment
+  FOR ALL USING (deal_id IN (SELECT id FROM ft_deals WHERE organization_id = '00000000-0000-0000-0000-000000000001'));
+
+CREATE POLICY "Anon can manage demo memos" ON ft_deal_memos
+  FOR ALL USING (deal_id IN (SELECT id FROM ft_deals WHERE organization_id = '00000000-0000-0000-0000-000000000001'));
