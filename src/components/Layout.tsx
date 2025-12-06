@@ -18,7 +18,8 @@ import {
   Lightbulb,
   Upload,
   Instagram,
-  Key
+  Key,
+  Building2
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,6 +43,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/foretrust', icon: Building2, label: 'Foretrust' },
     { path: '/earnings', icon: DollarSign, label: 'Earnings' },
     { path: '/products', icon: Package, label: 'Products' },
     { path: '/content', icon: Image, label: 'Content' },

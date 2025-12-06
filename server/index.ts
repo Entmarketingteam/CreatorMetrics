@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { existsSync } from 'fs';
@@ -5,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import ltkProxyRoutes from './routes/ltkProxy.js';
 import instagramPostsRoutes from './routes/instagramPosts.js';
+import foretrustRoutes from '../foretrust/backend/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -34,6 +36,9 @@ app.use('/api/ltk', ltkProxyRoutes);
 
 // Instagram Posts routes
 app.use('/api/instagram-posts', instagramPostsRoutes);
+
+// Foretrust API routes
+app.use('/api/foretrust', foretrustRoutes);
 
 // Production: Serve static files from dist folder
 if (isProd) {
@@ -75,6 +80,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.listen(PORT, () => {
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📡 LTK proxy available at http://localhost:${PORT}/api/ltk`);
+  console.log(`🏢 Foretrust API available at http://localhost:${PORT}/api/foretrust`);
   if (isProd) {
     console.log(`🌐 Frontend served from /dist on port ${PORT}`);
   }

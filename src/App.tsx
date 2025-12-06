@@ -16,6 +16,10 @@ import InstagramPosts from './pages/InstagramPosts';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Register from './pages/Register';
+// Foretrust Pages
+import ForetrustDashboard from './foretrust/pages/ForetrustDashboard';
+import ForetrustNewDeal from './foretrust/pages/ForetrustNewDeal';
+import ForetrustDealDetail from './foretrust/pages/ForetrustDealDetail';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -149,6 +153,31 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout><InstagramPosts /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        {/* Foretrust Routes */}
+        <Route
+          path="/foretrust"
+          element={
+            <ProtectedRoute>
+              <Layout><ForetrustDashboard /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/foretrust/new"
+          element={
+            <ProtectedRoute>
+              <Layout><ForetrustNewDeal /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/foretrust/deal/:dealId"
+          element={
+            <ProtectedRoute>
+              <Layout><ForetrustDealDetail /></Layout>
             </ProtectedRoute>
           }
         />
