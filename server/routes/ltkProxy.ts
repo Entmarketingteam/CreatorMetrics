@@ -509,4 +509,67 @@ router.get('/product-reviews', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/ltk/oauth/callback
+// Exchanges authorization code for tokens (OAuth callback)
+router.post('/oauth/callback', async (req: Request, res: Response) => {
+  try {
+    const { code, redirect_uri } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: 'Missing authorization code' });
+    }
+
+    if (!redirect_uri) {
+      return res.status(400).json({ error: 'Missing redirect_uri' });
+    }
+
+    // Exchange authorization code for tokens
+    const tokenResponse = await fetch('https://creator-auth.shopltk.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: redirect_uri,
+        client_id: 'iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT',
+        // Note: client_secret not required for public client (Auth0 PKCE flow)
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Token exchange failed:', tokenResponse.status, errorText);
+      return res.status(tokenResponse.status).json({ 
+        error: `Token exchange failed: ${tokenResponse.status}`,
+        details: errorText 
+      });
+    }
+
+    const tokenData = await tokenResponse.json();
+
+    // CRITICAL: Verify both tokens are present
+    if (!tokenData.access_token) {
+      return res.status(500).json({ error: 'Missing access_token in response' });
+    }
+
+    if (!tokenData.id_token) {
+      return res.status(500).json({ error: 'Missing id_token in response - required for new API gateway' });
+    }
+
+    // Return tokens to frontend
+    res.json({
+      access_token: tokenData.access_token,
+      id_token: tokenData.id_token,
+      refresh_token: tokenData.refresh_token,
+      expires_in: tokenData.expires_in || 3600,
+      token_type: tokenData.token_type || 'Bearer',
+    });
+  } catch (error: any) {
+    console.error('OAuth callback error:', error);
+    res.status(500).json({ error: error.message || 'Token exchange failed' });
+  }
+});
+
 export default router;

@@ -12,6 +12,7 @@ import Import from './pages/Import';
 import InstagramImport from './pages/InstagramImport';
 import JWTDecoder from './pages/JWTDecoder';
 import LTKTest from './pages/LTKTest';
+import LTKCallback from './pages/LTKCallback';
 import InstagramPosts from './pages/InstagramPosts';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -44,6 +45,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth/ltk/callback" element={<LTKCallback />} />
         <Route
           path="/"
           element={

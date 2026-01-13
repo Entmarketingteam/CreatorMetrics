@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Link2, CheckCircle2, XCircle, Key, Loader2, X, AlertCircle } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Link2, CheckCircle2, XCircle, Key, Loader2, AlertCircle } from 'lucide-react';
 import { useLTKAuth } from '../contexts/LTKAuthContext';
 import { useAuth } from '../contexts/AuthContext';
+import { ltkAuthService } from '../lib/ltkAuth';
 
 const LTK_MIDDLEWARE_URL = 'https://ltk-auth-middleware-production.up.railway.app';
 
@@ -17,14 +18,9 @@ interface LTKConnectionStatus {
 export default function Platforms() {
   const { isAuthenticated, clearAuth, setTokensManually } = useLTKAuth();
   const { user } = useAuth();
-
-  // Modal state
-  const [showLTKModal, setShowLTKModal] = useState(false);
-  const [ltkEmail, setLtkEmail] = useState('');
-  const [ltkPassword, setLtkPassword] = useState('');
+  const [searchParams] = useSearchParams();
 
   // Connection state
-  const [connecting, setConnecting] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<LTKConnectionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +34,15 @@ export default function Platforms() {
       setCheckingStatus(false);
     }
   }, [user?.id]);
+
+  // Show success message if redirected from OAuth callback
+  useEffect(() => {
+    if (searchParams.get('ltk_connected') === 'true') {
+      setSuccessMessage('LTK connected successfully!');
+      // Clear the query parameter
+      window.history.replaceState({}, '', '/platforms');
+    }
+  }, [searchParams]);
 
   const checkLTKStatus = async () => {
     if (!user?.id) return;
@@ -65,62 +70,9 @@ export default function Platforms() {
   const handleLTKConnect = () => {
     setError(null);
     setSuccessMessage(null);
-    setShowLTKModal(true);
-  };
-
-  const handleLTKSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user?.id) {
-      setError('You must be logged in to connect LTK');
-      return;
-    }
-
-    if (!ltkEmail || !ltkPassword) {
-      setError('Please enter both email and password');
-      return;
-    }
-
-    setConnecting(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`${LTK_MIDDLEWARE_URL}/api/ltk/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          email: ltkEmail,
-          password: ltkPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // If the middleware returns tokens, store them locally too
-        if (data.tokens) {
-          setTokensManually(data.tokens);
-        }
-
-        setSuccessMessage('LTK connected successfully!');
-        setShowLTKModal(false);
-        setLtkEmail('');
-        setLtkPassword('');
-
-        // Refresh connection status
-        await checkLTKStatus();
-      } else {
-        setError(data.error || data.message || 'Failed to connect LTK. Please check your credentials.');
-      }
-    } catch (err) {
-      console.error('LTK connect error:', err);
-      setError('Network error. Please try again.');
-    } finally {
-      setConnecting(false);
-    }
+    
+    // Initiate OAuth flow - redirects to LTK Auth0
+    ltkAuthService.initiateOAuthFlow();
   };
 
   const handleLTKDisconnect = async () => {
@@ -205,7 +157,7 @@ export default function Platforms() {
       )}
 
       {/* Error Message */}
-      {error && !showLTKModal && (
+      {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
           <p className="text-red-700 dark:text-red-300">{error}</p>
@@ -294,111 +246,6 @@ export default function Platforms() {
         ))}
       </div>
 
-      {/* LTK Connect Modal */}
-      {showLTKModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Connect LTK Account</h2>
-              <button
-                onClick={() => {
-                  setShowLTKModal(false);
-                  setError(null);
-                }}
-                disabled={connecting}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleLTKSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-                </div>
-              )}
-
-              <div>
-                <label htmlFor="ltk-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  LTK Email
-                </label>
-                <input
-                  type="email"
-                  id="ltk-email"
-                  value={ltkEmail}
-                  onChange={(e) => setLtkEmail(e.target.value)}
-                  disabled={connecting}
-                  placeholder="your@email.com"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="ltk-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  LTK Password
-                </label>
-                <input
-                  type="password"
-                  id="ltk-password"
-                  value={ltkPassword}
-                  onChange={(e) => setLtkPassword(e.target.value)}
-                  disabled={connecting}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  required
-                />
-              </div>
-
-              {connecting && (
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-spin" />
-                    <div>
-                      <p className="font-medium text-indigo-700 dark:text-indigo-300">Connecting to LTK...</p>
-                      <p className="text-sm text-indigo-600 dark:text-indigo-400">This may take up to 30 seconds</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLTKModal(false);
-                    setError(null);
-                  }}
-                  disabled={connecting}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={connecting}
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {connecting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Connecting...
-                    </>
-                  ) : (
-                    'Connect LTK'
-                  )}
-                </button>
-              </div>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
-                Your credentials are securely transmitted and encrypted. We never store your plain-text password.
-              </p>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -426,23 +426,29 @@ export class LTKAuthService {
 
   /**
    * Initiate LTK OAuth flow
+   * Redirects user to Auth0 for authentication
    */
   initiateOAuthFlow(): void {
-    const clientId = import.meta.env.VITE_LTK_CLIENT_ID;
-    if (!clientId) {
-      console.error('LTK Client ID not configured');
-      return;
-    }
-
+    const clientId = 'iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT';
+    const redirectUri = `${window.location.origin}/auth/ltk/callback`;
+    
+    // Generate random state for CSRF protection
+    const state = Math.random().toString(36).substring(2, 15) + 
+                  Math.random().toString(36).substring(2, 15);
+    
+    // Store state in sessionStorage for verification on callback
+    sessionStorage.setItem('ltk_oauth_state', state);
+    
     const params = new URLSearchParams({
-      client_id: clientId,
       response_type: 'code',
-      redirect_uri: `${window.location.origin}/auth/ltk/callback`,
-      scope: 'read:profile read:sales read:products',
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: 'openid profile email ltk.publisher offline_access',
+      state: state,
     });
 
-    // TODO: Replace with actual LTK OAuth URL
-    window.location.href = `https://api.ltk.ai/oauth/authorize?${params}`;
+    // Redirect to Auth0 authorization endpoint
+    window.location.href = `https://creator-auth.shopltk.com/authorize?${params.toString()}`;
   }
 
   /**
