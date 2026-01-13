@@ -1,8 +1,20 @@
 import { Router, Request, Response } from 'express';
 
+/**
+ * LTK API Proxy Routes
+ * 
+ * 📚 REFERENCE: For complete API documentation, endpoint details, authentication requirements,
+ * and implementation guide, see: docs/LTK-API-COMPLETE-REFERENCE.md
+ * 
+ * This file implements the backend proxy endpoints. All endpoint paths, query parameters,
+ * and authentication requirements are documented in the reference guide above.
+ */
+
 const router = Router();
 
-const LTK_API_BASE = 'https://creator-api-gateway.shopltk.com/v1';
+// API Gateway - using api-gateway.rewardstyle.com (creator-api-gateway.shopltk.com doesn't resolve)
+// The dual headers (Authorization + X-id-token) are still required as per requirements
+const LTK_API_BASE = 'https://api-gateway.rewardstyle.com';
 
 /**
  * Generic LTK API proxy handler
@@ -48,7 +60,14 @@ async function proxyLTKRequest(
     };
   } catch (error: any) {
     console.error('[LTK Proxy] Error:', error.message);
-    throw error;
+    console.error('[LTK Proxy] Error details:', {
+      url,
+      method,
+      errorName: error.name,
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
+    throw new Error(`LTK API request failed: ${error.message}`);
   }
 }
 
@@ -96,7 +115,7 @@ router.get('/analytics/contributors', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
     }
 
-    const result = await proxyLTKRequest('/api/creator-analytics/v1/contributors', accessToken, idToken);
+    const result = await proxyLTKRequest('/analytics/contributors', accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -113,8 +132,18 @@ router.get('/analytics/hero-chart', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
     }
 
-    const queryParams = new URLSearchParams(req.query as any).toString();
-    const endpoint = `/api/creator-analytics/v1/hero_chart${queryParams ? `?${queryParams}` : ''}`;
+    // Build query params, filtering out undefined/null/empty values
+    const queryParams = new URLSearchParams();
+    Object.entries(req.query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, String(value));
+      }
+    });
+    const queryString = queryParams.toString();
+    const endpoint = `/analytics/hero_chart${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('[LTK Proxy] Hero Chart endpoint:', endpoint);
+    console.log('[LTK Proxy] Query params:', req.query);
     
     const result = await proxyLTKRequest(endpoint, accessToken, idToken);
     res.status(result.status).json(result.data);
@@ -170,8 +199,18 @@ router.get('/analytics/top-performers', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
     }
 
-    const queryParams = new URLSearchParams(req.query as any).toString();
-    const endpoint = `/api/creator-analytics/v1/top_performers${queryParams ? `?${queryParams}` : ''}`;
+    // Build query params, filtering out undefined/null/empty values
+    const queryParams = new URLSearchParams();
+    Object.entries(req.query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, String(value));
+      }
+    });
+    const queryString = queryParams.toString();
+    const endpoint = `/analytics/top_performers/links${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('[LTK Proxy] Top Performers endpoint:', endpoint);
+    console.log('[LTK Proxy] Query params:', req.query);
     
     const result = await proxyLTKRequest(endpoint, accessToken, idToken);
     res.status(result.status).json(result.data);
@@ -246,7 +285,7 @@ router.get('/account/:accountId', async (req: Request, res: Response) => {
     }
 
     const { accountId } = req.params;
-    const result = await proxyLTKRequest(`/publishers/v1/accounts/${accountId}`, accessToken, idToken);
+    const result = await proxyLTKRequest(`/api/creator-account-service/v1/accounts/${accountId}`, accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -316,7 +355,7 @@ router.get('/amazon-identities', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Missing LTK tokens (both access and ID tokens required)' });
     }
 
-    const result = await proxyLTKRequest('/integrations/v1/amazon/identities', accessToken, idToken);
+    const result = await proxyLTKRequest('/api/co-api/v1/get_amazon_identities', accessToken, idToken);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

@@ -1,6 +1,9 @@
 /**
  * LTK OAuth Authentication Service
  * 
+ * 📚 REFERENCE: For complete authentication flow documentation, token refresh implementation,
+ * and all Auth0 details, see: docs/LTK-API-COMPLETE-REFERENCE.md
+ * 
  * SECURITY NOTICE - PRODUCTION DEPLOYMENT REQUIREMENTS:
  * 
  * This implementation is designed for DEVELOPMENT AND TESTING only.
@@ -71,12 +74,25 @@ export class LTKAuthService {
    * Retrieve stored LTK tokens
    */
   getTokens(): LTKTokens | null {
-    const stored = localStorage.getItem(LTK_TOKENS_KEY);
-    if (!stored) return null;
-    
     try {
-      return JSON.parse(stored);
-    } catch {
+      const stored = localStorage.getItem(LTK_TOKENS_KEY);
+      if (!stored) return null;
+      
+      const parsed = JSON.parse(stored);
+      // Validate that tokens have required fields (especially id_token for new API gateway)
+      if (parsed && parsed.access_token) {
+        // If old format (missing id_token), return null to force re-auth
+        if (!parsed.id_token) {
+          console.warn('Old token format detected (missing id_token), clearing tokens');
+          this.clearTokens();
+          return null;
+        }
+        return parsed;
+      }
+      return null;
+    } catch (error) {
+      // Silently handle any errors - corrupted localStorage, etc.
+      console.warn('Error reading tokens from localStorage:', error);
       return null;
     }
   }
@@ -105,9 +121,33 @@ export class LTKAuthService {
    * Get current authentication state
    */
   getAuthState(): LTKAuthState {
-    const tokens = this.getTokens();
-    
-    if (!tokens) {
+    try {
+      const tokens = this.getTokens();
+      
+      if (!tokens) {
+        return {
+          tokens: null,
+          decodedToken: null,
+          isAuthenticated: false,
+          isExpired: false,
+          expiresIn: null,
+        };
+      }
+
+      const decodedToken = this.decodeToken(tokens.access_token);
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = tokens.expires_at <= now;
+      const expiresIn = tokens.expires_at - now;
+
+      return {
+        tokens,
+        decodedToken,
+        isAuthenticated: !isExpired,
+        isExpired,
+        expiresIn: expiresIn > 0 ? expiresIn : null,
+      };
+    } catch (error) {
+      console.error('Error getting auth state:', error);
       return {
         tokens: null,
         decodedToken: null,
@@ -116,19 +156,6 @@ export class LTKAuthService {
         expiresIn: null,
       };
     }
-
-    const decodedToken = this.decodeToken(tokens.access_token);
-    const now = Math.floor(Date.now() / 1000);
-    const isExpired = tokens.expires_at <= now;
-    const expiresIn = tokens.expires_at - now;
-
-    return {
-      tokens,
-      decodedToken,
-      isAuthenticated: !isExpired,
-      isExpired,
-      expiresIn: expiresIn > 0 ? expiresIn : null,
-    };
   }
 
   /**

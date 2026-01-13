@@ -10,9 +10,20 @@ interface LTKAuthContextType extends LTKAuthState {
 const LTKAuthContext = createContext<LTKAuthContextType | undefined>(undefined);
 
 export function LTKAuthProvider({ children }: { children: ReactNode }) {
-  const [authState, setAuthState] = useState<LTKAuthState>(() => 
-    ltkAuthService.getAuthState()
-  );
+  const [authState, setAuthState] = useState<LTKAuthState>(() => {
+    try {
+      return ltkAuthService.getAuthState();
+    } catch (error) {
+      console.error('Error initializing LTK auth state:', error);
+      return {
+        tokens: null,
+        decodedToken: null,
+        isAuthenticated: false,
+        isExpired: false,
+        expiresIn: null,
+      };
+    }
+  });
 
   // Update state when tokens change
   useEffect(() => {

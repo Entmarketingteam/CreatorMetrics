@@ -1,4 +1,18 @@
-# LTK Auth0 Integration Guide
+# ⚠️ DEPRECATED - USE NEW REFERENCE DOCUMENT
+
+**This file is outdated and may contain incorrect information.**
+
+**👉 USE THIS INSTEAD: [`LTK-API-COMPLETE-REFERENCE.md`](./LTK-API-COMPLETE-REFERENCE.md)**
+
+The new reference document contains:
+- ✅ Complete Auth0 authentication flow (tested and working)
+- ✅ Token refresh implementation with dual-header requirement
+- ✅ All endpoint details with correct paths
+- ✅ Code examples ready to use
+
+---
+
+# LTK Auth0 Integration Guide (OLD - DO NOT USE)
 
 ## Overview
 

@@ -1,0 +1,9 @@
+LTK_API_REFERENCE=docs/LTK-API-COMPLETE-REFERENCE.md
+
+This file serves as a reminder to always reference the complete LTK API documentation
+when working on LTK integration features.
+
+The complete reference document contains all tested and working endpoints, correct
+paths, authentication flows, and implementation details.
+
+DO NOT use old documentation files - they may contain outdated or incorrect information.

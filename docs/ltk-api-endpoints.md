@@ -1,4 +1,20 @@
-# LTK API Endpoints Reference
+# ⚠️ DEPRECATED - USE NEW REFERENCE DOCUMENT
+
+**This file is outdated and may contain incorrect information.**
+
+**👉 USE THIS INSTEAD: [`LTK-API-COMPLETE-REFERENCE.md`](./LTK-API-COMPLETE-REFERENCE.md)**
+
+The new reference document contains:
+- ✅ All 14+ tested and working endpoints
+- ✅ Correct endpoint paths (many were corrected)
+- ✅ Complete authentication flow with dual-header requirement
+- ✅ Revenue matching logic
+- ✅ Code examples
+- ✅ Troubleshooting guide
+
+---
+
+# LTK API Endpoints Reference (OLD - DO NOT USE)
 
 ## Base URL
 ```

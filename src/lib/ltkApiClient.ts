@@ -3,6 +3,12 @@
  * 
  * Uses backend proxy to access LTK API and bypass CORS restrictions.
  * Backend server forwards requests to api-gateway.rewardstyle.com
+ * 
+ * 📚 REFERENCE: For complete API documentation, endpoint details, and implementation guide,
+ * see: docs/LTK-API-COMPLETE-REFERENCE.md
+ * 
+ * This file implements the client-side API methods. All endpoint paths and authentication
+ * requirements are documented in the reference guide above.
  */
 
 // Use backend proxy URL
@@ -69,8 +75,15 @@ export class LTKApiClient {
   }
 
   async getHeroChart(params: LTKAnalyticsParams) {
-    const query = new URLSearchParams(params as any).toString();
-    return this.request(`/analytics/hero-chart?${query}`);
+    // Filter out undefined/null values and build query string
+    const cleanParams: Record<string, string> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        cleanParams[key] = String(value);
+      }
+    });
+    const query = new URLSearchParams(cleanParams).toString();
+    return this.request(`/analytics/hero-chart${query ? `?${query}` : ''}`);
   }
 
   async getPerformanceSummary(params: LTKAnalyticsParams) {

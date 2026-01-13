@@ -2,6 +2,27 @@
 
 A comprehensive creator analytics dashboard for tracking affiliate sales, products, and platform connections across multiple affiliate networks (LTK, Amazon, Walmart, ShopStyle).
 
+## 📚 LTK API Integration
+
+**For LTK API integration, use these guides:**
+
+1. **[`docs/LTK-API-COMPLETE-REFERENCE.md`](./docs/LTK-API-COMPLETE-REFERENCE.md)** ✅
+   - Complete API reference with all 14+ endpoints
+   - Authentication flows, code examples, troubleshooting
+
+2. **[`docs/LTK-INTEGRATION-GUIDE.md`](./docs/LTK-INTEGRATION-GUIDE.md)** 🚀
+   - Step-by-step guide for integrating LTK into NEW applications
+   - Platform-specific instructions (React, Node.js, Python, etc.)
+   - Copy/paste code examples
+   - Quick checklist
+
+3. **[`docs/LTK-SDK-SETUP.md`](./docs/LTK-SDK-SETUP.md)** 📦 **NEW**
+   - Create a reusable LTK SDK package for use across multiple projects
+   - NPM package setup, git submodules, monorepo options
+   - Extract and reuse the working LTK integration code
+
+**Do not use older documentation files** - they may contain outdated or incorrect information.
+
 ## Features
 
 - **Dashboard**: Overview of revenue, clicks, conversion rates, and top-performing products

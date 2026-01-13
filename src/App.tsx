@@ -142,7 +142,11 @@ function App() {
         />
         <Route
           path="/ltk-test"
-          element={<LTKTest />}
+          element={
+            <Layout>
+              <LTKTest />
+            </Layout>
+          }
         />
         <Route
           path="/instagram-posts"
