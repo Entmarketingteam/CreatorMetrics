@@ -44,48 +44,38 @@ This guide covers deploying CreatorMetrics to Railway and Vercel.
 
 ## ▲ Vercel Deployment
 
-### Option 1: Full-Stack (Recommended)
+### Current Setup (Frontend Only - What Was Working Before)
 
-Vercel can deploy both frontend and backend together.
+Your Vercel deployment was working for the frontend. The `vercel.json` is configured to:
+- Build the Vite frontend
+- Serve static files from `dist/`
+- Handle SPA routing
 
-1. **Connect Repository:**
-   - Go to [Vercel](https://vercel.com)
-   - Click "Add New Project"
-   - Import `CreatorMetrics` repository
+**To Update Your Existing Vercel Deployment:**
 
-2. **Configure:**
-   - Framework Preset: **Other**
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-   - Install Command: `npm install`
+1. **Vercel will auto-deploy** when you push to GitHub (already connected)
+2. **No changes needed** - the frontend will work as before
+3. **For LTK API endpoints**, you have two options:
 
-3. **Set Environment Variables:**
+### Option 1: Use Railway for Backend (Recommended)
+
+Since Vercel works great for frontend, deploy the backend separately:
+
+1. **Deploy Backend to Railway** (see Railway section above)
+2. **Set Environment Variable in Vercel:**
    ```
-   NODE_ENV=production
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_key
-   VITE_BACKEND_URL= (leave empty for same-origin)
+   VITE_BACKEND_URL=https://your-railway-app.railway.app
    ```
+3. **Frontend will call backend** via the Railway URL
 
-4. **Deploy:**
-   - Vercel will deploy automatically
-   - API routes at `/api/*` will be handled by `server/index.ts`
-   - Frontend routes will serve from `dist/`
+### Option 2: Keep Everything on Vercel
 
-### Option 2: Separate Frontend/Backend
+If you want everything on Vercel, you'll need to:
+- Use Vercel Serverless Functions for API routes
+- Adapt Express routes to serverless functions
+- More complex setup
 
-If you prefer separate services:
-
-**Frontend (Vercel):**
-- Framework: Vite
-- Build: `npm run build`
-- Output: `dist`
-- Environment: Set `VITE_BACKEND_URL` to your backend URL
-
-**Backend (Railway or Vercel):**
-- Deploy `server/` directory separately
-- Set `PORT` environment variable
-- Frontend will call backend via `VITE_BACKEND_URL`
+**Recommendation:** Use Railway for backend (handles Express perfectly) + Vercel for frontend (what you already have working).
 
 ---
 
