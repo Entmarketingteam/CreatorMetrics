@@ -15,82 +15,128 @@ export default function LTKCallback() {
 
   const handleOAuthCallback = async () => {
     try {
-      // Get authorization code and state from URL
+      // Check if we have tokens from backend redirect (new flow)
+      const tokensParam = searchParams.get('tokens');
+      if (tokensParam) {
+        try {
+          const tokenData = JSON.parse(decodeURIComponent(tokensParam));
+          
+          // CRITICAL: Verify both tokens are present
+          if (!tokenData.access_token || !tokenData.id_token) {
+            throw new Error('Missing tokens in response. Expected both access_token and id_token.');
+          }
+
+          // Store tokens
+          const tokens = {
+            access_token: tokenData.access_token,
+            id_token: tokenData.id_token,
+            refresh_token: tokenData.refresh_token || '',
+            expires_at: tokenData.expires_at || Math.floor(Date.now() / 1000) + 3600,
+            token_type: tokenData.token_type || 'Bearer',
+          };
+
+          ltkAuthService.storeTokens(tokens);
+
+          setStatus('success');
+          setMessage('Successfully connected to LTK! Redirecting...');
+
+          // Redirect to platforms page after 2 seconds
+          setTimeout(() => {
+            navigate('/platforms?ltk_connected=true');
+          }, 2000);
+          return;
+        } catch (parseError) {
+          console.error('Failed to parse tokens:', parseError);
+          throw new Error('Invalid token data received');
+        }
+      }
+
+      // Check for error from backend redirect
+      const error = searchParams.get('ltk_error');
+      if (error) {
+        setStatus('error');
+        setMessage(decodeURIComponent(error));
+        setTimeout(() => navigate('/platforms'), 3000);
+        return;
+      }
+
+      // Legacy flow: Get authorization code and state from URL (if direct callback)
       const code = searchParams.get('code');
       const state = searchParams.get('state');
-      const error = searchParams.get('error');
+      const oauthError = searchParams.get('error');
       const errorDescription = searchParams.get('error_description');
 
       // Check for OAuth errors
-      if (error) {
+      if (oauthError) {
         setStatus('error');
-        setMessage(errorDescription || error || 'Authentication failed');
+        setMessage(errorDescription || oauthError || 'Authentication failed');
         setTimeout(() => navigate('/platforms'), 3000);
         return;
       }
 
-      // Verify state (CSRF protection)
-      const storedState = sessionStorage.getItem('ltk_oauth_state');
-      if (!state || state !== storedState) {
-        setStatus('error');
-        setMessage('Invalid state parameter. Please try again.');
+      // If we have a code, exchange it (legacy flow)
+      if (code) {
+        // Verify state (CSRF protection)
+        const storedState = sessionStorage.getItem('ltk_oauth_state');
+        if (!state || state !== storedState) {
+          setStatus('error');
+          setMessage('Invalid state parameter. Please try again.');
+          sessionStorage.removeItem('ltk_oauth_state');
+          setTimeout(() => navigate('/platforms'), 3000);
+          return;
+        }
+
+        // Clear state from sessionStorage
         sessionStorage.removeItem('ltk_oauth_state');
-        setTimeout(() => navigate('/platforms'), 3000);
+
+        // Exchange code for tokens via backend (more secure)
+        setMessage('Exchanging authorization code for tokens...');
+        
+        const response = await fetch('/api/ltk/oauth/callback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code, redirect_uri: `${window.location.origin}/auth/ltk/callback` }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Token exchange failed' }));
+          throw new Error(errorData.error || `Token exchange failed: ${response.status}`);
+        }
+
+        const tokenData = await response.json();
+
+        // CRITICAL: Verify both tokens are present
+        if (!tokenData.access_token || !tokenData.id_token) {
+          throw new Error('Missing tokens in response. Expected both access_token and id_token.');
+        }
+
+        // Store tokens
+        const tokens = {
+          access_token: tokenData.access_token,
+          id_token: tokenData.id_token,
+          refresh_token: tokenData.refresh_token || '',
+          expires_at: Math.floor(Date.now() / 1000) + (tokenData.expires_in || 3600),
+          token_type: tokenData.token_type || 'Bearer',
+        };
+
+        ltkAuthService.storeTokens(tokens);
+
+        setStatus('success');
+        setMessage('Successfully connected to LTK! Redirecting...');
+
+        // Redirect to platforms page after 2 seconds
+        setTimeout(() => {
+          navigate('/platforms?ltk_connected=true');
+        }, 2000);
         return;
       }
 
-      // Clear state from sessionStorage
-      sessionStorage.removeItem('ltk_oauth_state');
-
-      // Check if we have an authorization code
-      if (!code) {
-        setStatus('error');
-        setMessage('No authorization code received. Please try again.');
-        setTimeout(() => navigate('/platforms'), 3000);
-        return;
-      }
-
-      // Exchange code for tokens via backend (more secure)
-      setMessage('Exchanging authorization code for tokens...');
-      
-      const response = await fetch('/api/ltk/oauth/callback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code, redirect_uri: `${window.location.origin}/auth/ltk/callback` }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Token exchange failed' }));
-        throw new Error(errorData.error || `Token exchange failed: ${response.status}`);
-      }
-
-      const tokenData = await response.json();
-
-      // CRITICAL: Verify both tokens are present
-      if (!tokenData.access_token || !tokenData.id_token) {
-        throw new Error('Missing tokens in response. Expected both access_token and id_token.');
-      }
-
-      // Store tokens
-      const tokens = {
-        access_token: tokenData.access_token,
-        id_token: tokenData.id_token,
-        refresh_token: tokenData.refresh_token || '',
-        expires_at: Math.floor(Date.now() / 1000) + (tokenData.expires_in || 3600),
-        token_type: tokenData.token_type || 'Bearer',
-      };
-
-      ltkAuthService.storeTokens(tokens);
-
-      setStatus('success');
-      setMessage('Successfully connected to LTK! Redirecting...');
-
-      // Redirect to platforms page after 2 seconds
-      setTimeout(() => {
-        navigate('/platforms?ltk_connected=true');
-      }, 2000);
+      // No tokens and no code - something went wrong
+      setStatus('error');
+      setMessage('No authentication data received. Please try connecting again.');
+      setTimeout(() => navigate('/platforms'), 3000);
 
     } catch (error) {
       console.error('OAuth callback error:', error);

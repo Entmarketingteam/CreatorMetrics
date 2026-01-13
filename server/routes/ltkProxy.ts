@@ -509,7 +509,156 @@ router.get('/product-reviews', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/ltk/oauth/callback
+// GET /api/ltk/oauth/login
+// Initiates OAuth flow - redirects to Auth0
+router.get('/oauth/login', async (req: Request, res: Response) => {
+  try {
+    const clientId = 'iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT';
+    
+    // Use backend URL for callback (we control this, so it should work)
+    // Try using Railway backend URL, or fallback to a known allowed URL
+    const backendUrl = process.env.RAILWAY_PUBLIC_DOMAIN || 
+                      process.env.VERCEL_URL || 
+                      req.get('host') || 
+                      'localhost:3001';
+    
+    // Use HTTP/HTTPS based on request
+    const protocol = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
+    const redirectUri = `${protocol}://${backendUrl}/api/ltk/oauth/callback`;
+    
+    // Generate random state for CSRF protection
+    const state = Math.random().toString(36).substring(2, 15) + 
+                  Math.random().toString(36).substring(2, 15);
+    
+    // Store state in session (or we could use a database/cache)
+    // For now, we'll pass it in the redirect and verify on callback
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: 'openid profile email ltk.publisher offline_access',
+      state: state,
+    });
+
+    // Store state temporarily (in production, use Redis or database)
+    // For now, encode it in a way we can verify
+    res.cookie('ltk_oauth_state', state, { 
+      httpOnly: true, 
+      secure: protocol === 'https',
+      sameSite: 'lax',
+      maxAge: 600 // 10 minutes
+    });
+
+    // Redirect to Auth0 authorization endpoint
+    res.redirect(`https://creator-auth.shopltk.com/authorize?${params.toString()}`);
+  } catch (error: any) {
+    console.error('OAuth login error:', error);
+    res.status(500).json({ error: error.message || 'Failed to initiate OAuth flow' });
+  }
+});
+
+// GET /api/ltk/oauth/callback
+// Handles OAuth callback from Auth0
+// NOTE: This callback URL must be whitelisted in LTK's Auth0 app settings
+router.get('/oauth/callback', async (req: Request, res: Response) => {
+  try {
+    const code = req.query.code as string;
+    const state = req.query.state as string;
+    const error = req.query.error as string;
+    const errorDescription = req.query.error_description as string;
+
+    // Get frontend URL from cookie (set during login)
+    const frontendUrl = req.cookies?.ltk_oauth_frontend || 
+                       process.env.FRONTEND_URL || 
+                       'https://creatotmetrics.vercel.app';
+
+    // Check for OAuth errors
+    if (error) {
+      console.error('[OAuth] Error from Auth0:', error, errorDescription);
+      return res.redirect(`${frontendUrl}/platforms?ltk_error=${encodeURIComponent(errorDescription || error || 'Authentication failed')}`);
+    }
+
+    // Verify state (CSRF protection)
+    const storedState = req.cookies?.ltk_oauth_state;
+    if (!state || state !== storedState) {
+      console.error('[OAuth] State mismatch:', { received: state, stored: storedState });
+      return res.redirect(`${frontendUrl}/platforms?ltk_error=${encodeURIComponent('Invalid state parameter - security check failed')}`);
+    }
+
+    // Clear state cookie
+    res.clearCookie('ltk_oauth_state');
+    res.clearCookie('ltk_oauth_frontend');
+
+    if (!code) {
+      return res.redirect(`${frontendUrl}/platforms?ltk_error=${encodeURIComponent('No authorization code received')}`);
+    }
+
+    // Get redirect URI (must match what we sent in login)
+    const backendUrl = process.env.RAILWAY_PUBLIC_DOMAIN || 
+                      process.env.VERCEL_URL || 
+                      (req.get('host') ? `${req.get('x-forwarded-proto') || 'https'}://${req.get('host')}` : null) ||
+                      'https://web-production-7199b.up.railway.app';
+    
+    const backendDomain = backendUrl.includes('://') 
+      ? backendUrl.split('://')[1] 
+      : backendUrl;
+    
+    const protocol = backendUrl.startsWith('https') ? 'https' : 'https';
+    const redirectUri = `${protocol}://${backendDomain}/api/ltk/oauth/callback`;
+
+    console.log(`[OAuth] Exchanging code for tokens with redirect_uri: ${redirectUri}`);
+
+    // Exchange authorization code for tokens
+    const tokenResponse = await fetch('https://creator-auth.shopltk.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: redirectUri,
+        client_id: 'iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('[OAuth] Token exchange failed:', tokenResponse.status, errorText);
+      return res.redirect(`${frontendUrl}/platforms?ltk_error=${encodeURIComponent(`Token exchange failed: ${errorText}`)}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+
+    // CRITICAL: Verify both tokens are present
+    if (!tokenData.access_token || !tokenData.id_token) {
+      console.error('[OAuth] Missing tokens in response:', { hasAccess: !!tokenData.access_token, hasId: !!tokenData.id_token });
+      return res.redirect(`${frontendUrl}/platforms?ltk_error=${encodeURIComponent('Missing tokens in response - expected both access_token and id_token')}`);
+    }
+
+    // Store tokens temporarily and pass to frontend
+    const tokenString = encodeURIComponent(JSON.stringify({
+      access_token: tokenData.access_token,
+      id_token: tokenData.id_token,
+      refresh_token: tokenData.refresh_token,
+      expires_at: Math.floor(Date.now() / 1000) + (tokenData.expires_in || 3600),
+      token_type: tokenData.token_type || 'Bearer',
+    }));
+
+    console.log('[OAuth] Tokens received, redirecting to frontend');
+
+    // Redirect to frontend with tokens (they'll be stored client-side)
+    res.redirect(`${frontendUrl}/auth/ltk/callback?tokens=${tokenString}`);
+  } catch (error: any) {
+    console.error('[OAuth] Callback error:', error);
+    const frontendUrl = req.cookies?.ltk_oauth_frontend || 
+                       process.env.FRONTEND_URL || 
+                       'https://creatotmetrics.vercel.app';
+    res.redirect(`${frontendUrl}/platforms?ltk_error=${encodeURIComponent(error.message || 'Authentication failed')}`);
+  }
+});
+
+// POST /api/ltk/oauth/callback (legacy - for direct code exchange from frontend)
 // Exchanges authorization code for tokens (OAuth callback)
 router.post('/oauth/callback', async (req: Request, res: Response) => {
   try {

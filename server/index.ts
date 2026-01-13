@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -19,6 +20,7 @@ app.use(cors({
   origin: true,
   credentials: true
 }));
+app.use(cookieParser());
 app.use(express.json());
 
 // Health check

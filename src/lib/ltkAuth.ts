@@ -426,29 +426,17 @@ export class LTKAuthService {
 
   /**
    * Initiate LTK OAuth flow
-   * Redirects user to Auth0 for authentication
+   * Uses backend to handle OAuth (avoids callback URL restrictions)
    */
   initiateOAuthFlow(): void {
-    const clientId = 'iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT';
-    const redirectUri = `${window.location.origin}/auth/ltk/callback`;
+    // Use backend OAuth endpoint which handles callback URL properly
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+    const oauthUrl = backendUrl 
+      ? `${backendUrl}/api/ltk/oauth/login`
+      : '/api/ltk/oauth/login';
     
-    // Generate random state for CSRF protection
-    const state = Math.random().toString(36).substring(2, 15) + 
-                  Math.random().toString(36).substring(2, 15);
-    
-    // Store state in sessionStorage for verification on callback
-    sessionStorage.setItem('ltk_oauth_state', state);
-    
-    const params = new URLSearchParams({
-      response_type: 'code',
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      scope: 'openid profile email ltk.publisher offline_access',
-      state: state,
-    });
-
-    // Redirect to Auth0 authorization endpoint
-    window.location.href = `https://creator-auth.shopltk.com/authorize?${params.toString()}`;
+    // Redirect to backend OAuth endpoint
+    window.location.href = oauthUrl;
   }
 
   /**
