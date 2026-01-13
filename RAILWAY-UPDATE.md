@@ -35,15 +35,17 @@ If auto-deploy didn't trigger:
 
 ### Verify Environment Variables
 
+**📋 See `RAILWAY-ENV-VARIABLES.md` for complete setup guide**
+
 Make sure these are set in Railway (Settings → Variables):
 
 ```
-NODE_ENV=production
 VITE_SUPABASE_URL=your_supabase_url (if using)
 VITE_SUPABASE_ANON_KEY=your_supabase_key (if using)
+DATABASE_URL=postgresql://... (if using Instagram posts)
 ```
 
-**Note:** `PORT` is auto-set by Railway, don't override it.
+**Note:** `NODE_ENV` and `PORT` are auto-set by Railway, don't override them.
 
 ### Check What's Deployed
 
