@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Link2, CheckCircle2, XCircle, Key, Loader2, AlertCircle } from 'lucide-react';
+import { Link2, CheckCircle2, XCircle, Key, Loader2, AlertCircle, X } from 'lucide-react';
 import { useLTKAuth } from '../contexts/LTKAuthContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ltkAuthService } from '../lib/ltkAuth';
@@ -45,23 +45,30 @@ export default function Platforms() {
   }, [searchParams]);
 
   const checkLTKStatus = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setCheckingStatus(false);
+      return;
+    }
 
     setCheckingStatus(true);
     setError(null);
 
     try {
+      // Check if user has tokens stored locally (primary check)
+      // The middleware check is optional - if it fails, we still use local auth state
       const response = await fetch(`${LTK_MIDDLEWARE_URL}/api/ltk/status/${user.id}`);
       const data = await response.json();
 
       if (response.ok) {
         setConnectionStatus(data);
       } else {
-        setConnectionStatus({ connected: false });
+        // If middleware fails, just use local auth state
+        setConnectionStatus({ connected: isAuthenticated });
       }
     } catch (err) {
-      console.error('Failed to check LTK status:', err);
-      setConnectionStatus({ connected: false });
+      // Middleware unavailable - use local auth state instead
+      console.warn('LTK middleware unavailable, using local auth state:', err);
+      setConnectionStatus({ connected: isAuthenticated });
     } finally {
       setCheckingStatus(false);
     }
