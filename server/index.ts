@@ -45,7 +45,12 @@ if (isProd) {
   app.use(express.static(distPath));
   
   // SPA fallback - serve index.html for all non-API GET routes
-  app.get('*', (req, res) => {
+  app.get('/*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    
     // Check if build exists before attempting to serve
     if (!existsSync(indexPath)) {
       console.error('Build not found:', indexPath);
