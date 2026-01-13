@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 
 const router = Router();
 
-const LTK_API_BASE = 'https://api-gateway.rewardstyle.com';
+const LTK_API_BASE = 'https://creator-api-gateway.shopltk.com/v1';
 
 /**
  * Generic LTK API proxy handler
@@ -24,7 +24,7 @@ async function proxyLTKRequest(
       method,
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'x-id-token': idToken,
+        'X-id-token': idToken, // Capital X as per requirements - both tokens required
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Origin': 'https://creator.shopltk.com',

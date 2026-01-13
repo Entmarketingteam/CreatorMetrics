@@ -28,6 +28,7 @@ export interface LTKPost {
   id: string;
   ltk_id: string;
   permalink?: string;
+  rs_url?: string; // Required for matching Instagram Story links (format: https://rstyle.me/+XXXXX)
   published_at: string;
   clicks?: number;
   revenue?: number;
@@ -82,6 +83,86 @@ export function extractLTKLinks(text: string): string[] {
   }
   
   return [...new Set(links)]; // Remove duplicates
+}
+
+/**
+ * Extract ltk.app.link short codes from Instagram Story link stickers
+ * 
+ * Instagram Stories use link stickers that contain URLs like:
+ * - https://ltk.app.link/XXXXX
+ * - ltk.app.link/XXXXX
+ * 
+ * Returns array of short codes found in the text
+ */
+export function extractLTKAppLinkCodes(text: string): string[] {
+  if (!text) return [];
+  
+  const codes: string[] = [];
+  
+  // Match ltk.app.link/XXXXX patterns (with or without protocol)
+  const ltkAppLinkPattern = /ltk\.app\.link\/([a-zA-Z0-9_-]+)/gi;
+  const matches = text.matchAll(ltkAppLinkPattern);
+  for (const match of matches) {
+    codes.push(match[1]); // Store just the short code
+  }
+  
+  return [...new Set(codes)]; // Remove duplicates
+}
+
+/**
+ * Extract short code from rs_url
+ * 
+ * rs_url format: https://rstyle.me/+XXXXX or rstyle.me/+XXXXX
+ * Returns the short code (the part after the +)
+ */
+export function extractRSUrlShortCode(rsUrl: string): string | null {
+  if (!rsUrl) return null;
+  
+  // Match rstyle.me/+XXXXX pattern
+  const rsUrlPattern = /rstyle\.me\/\+([a-zA-Z0-9_-]+)/i;
+  const match = rsUrl.match(rsUrlPattern);
+  
+  return match ? match[1] : null;
+}
+
+/**
+ * Match Instagram Story link codes to LTK commissions using rs_url
+ * 
+ * This utility matches:
+ * - Instagram Story link stickers containing ltk.app.link/XXXXX
+ * - To LTK commissions with rs_url containing rstyle.me/+XXXXX
+ * 
+ * The short code in the Instagram URL should match the short code in the rs_url
+ * 
+ * @param instagramStoryLinks - Array of ltk.app.link short codes from Instagram Stories
+ * @param ltkCommissions - Array of LTK commission objects with rs_url field
+ * @returns Map of Instagram Story link codes to matched LTK commission data
+ */
+export function matchStoryLinksToCommissions(
+  instagramStoryLinks: string[],
+  ltkCommissions: Array<{ rs_url?: string; [key: string]: any }>
+): Map<string, any> {
+  const matches = new Map<string, any>();
+  
+  // Create a map of rs_url short codes to commission data
+  const rsUrlMap = new Map<string, any>();
+  for (const commission of ltkCommissions) {
+    if (commission.rs_url) {
+      const shortCode = extractRSUrlShortCode(commission.rs_url);
+      if (shortCode) {
+        rsUrlMap.set(shortCode, commission);
+      }
+    }
+  }
+  
+  // Match Instagram Story link codes to rs_url short codes
+  for (const storyCode of instagramStoryLinks) {
+    if (rsUrlMap.has(storyCode)) {
+      matches.set(storyCode, rsUrlMap.get(storyCode));
+    }
+  }
+  
+  return matches;
 }
 
 /**

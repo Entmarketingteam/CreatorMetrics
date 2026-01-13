@@ -44,6 +44,7 @@ export default function JWTDecoder() {
       const parsed = JSON.parse(manualTokenInput);
       const tokens: LTKTokens = {
         access_token: parsed.access_token,
+        id_token: parsed.id_token || '', // Required for new API gateway
         refresh_token: parsed.refresh_token,
         expires_at: parsed.expires_at || Math.floor(Date.now() / 1000) + 3600,
         token_type: parsed.token_type || 'Bearer',
@@ -171,12 +172,12 @@ export default function JWTDecoder() {
         <div className="bg-card rounded-lg p-6 border border-border">
           <h3 className="text-h3 font-semibold text-foreground mb-4">Add Tokens Manually</h3>
           <p className="text-body text-muted-foreground mb-4">
-            Paste your LTK tokens JSON below (should include access_token, refresh_token, and optionally expires_at):
+            Paste your LTK tokens JSON below (should include access_token, id_token, refresh_token, and optionally expires_at):
           </p>
           <textarea
             value={manualTokenInput}
             onChange={(e) => setManualTokenInput(e.target.value)}
-            placeholder='{"access_token": "...", "refresh_token": "...", "expires_at": 1234567890}'
+            placeholder='{"access_token": "...", "id_token": "...", "refresh_token": "...", "expires_at": 1234567890}'
             className="w-full min-h-32 bg-background border border-border rounded-lg p-3 text-body text-foreground font-mono text-sm"
             data-testid="textarea-manual-tokens"
           />

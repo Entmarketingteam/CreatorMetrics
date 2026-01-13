@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LTKApiClient } from '../lib/ltkApiClient';
 import { useLTKAuth } from '../hooks/useLTKAuth';
-import { Loader2, CheckCircle2, XCircle, Copy, Save, ArrowLeft } from 'lucide-react';
+import { ltkAuthService } from '../lib/ltkAuth';
+import { extractLTKAppLinkCodes, extractRSUrlShortCode, matchStoryLinksToCommissions } from '../lib/contentMatcher';
+import { Loader2, CheckCircle2, XCircle, Copy, Save, ArrowLeft, RefreshCw } from 'lucide-react';
 
 interface TestResult {
   endpoint: string;
@@ -117,6 +119,13 @@ export default function LTKTest() {
       // Integrations
       { key: 'amazonIds', name: 'Get Amazon Identities', fn: (c: LTKApiClient) => c.getAmazonIdentities()},
       { key: 'searchTrends', name: 'Get LTK Search Trends', fn: (c: LTKApiClient) => c.getLTKSearchTrends()},
+      { key: 'topPerformersLinks', name: 'Get Top Performers Links (with rs_url)', fn: (c: LTKApiClient) => c.getTopPerformersLinks({
+        start_date: '2025-10-01T00:00:00Z',
+        end_date: '2025-10-07T23:59:59Z',
+        publisher_ids: publisherId,
+        platform: 'rs,ltk',
+        limit: 10
+      })},
     ];
 
     for (const test of tests) {
@@ -125,6 +134,84 @@ export default function LTKTest() {
     }
 
     setIsTestingAll(false);
+  };
+
+  const testTokenRefresh = async () => {
+    const refreshToken = prompt('Enter your refresh token:');
+    if (!refreshToken) return;
+
+    updateResult('tokenRefresh', { endpoint: 'Refresh LTK Tokens', status: 'pending' });
+    const startTime = performance.now();
+
+    try {
+      const tokens = await ltkAuthService.refresh_ltk_tokens(refreshToken);
+      const duration = performance.now() - startTime;
+      
+      // Update the token inputs with new tokens
+      setAccessToken(tokens.access_token);
+      setIdToken(tokens.id_token);
+      
+      updateResult('tokenRefresh', {
+        status: 'success',
+        data: {
+          access_token: tokens.access_token.substring(0, 50) + '...',
+          id_token: tokens.id_token.substring(0, 50) + '...',
+          expires_at: new Date(tokens.expires_at * 1000).toISOString(),
+          message: 'Tokens refreshed successfully! Both tokens updated in form above.'
+        },
+        duration
+      });
+    } catch (error: any) {
+      const duration = performance.now() - startTime;
+      updateResult('tokenRefresh', {
+        status: 'error',
+        error: error.message,
+        duration
+      });
+    }
+  };
+
+  const testRevenueMatching = () => {
+    updateResult('revenueMatching', { endpoint: 'Revenue Matching Utilities', status: 'pending' });
+    
+    try {
+      // Test data
+      const instagramStoryText = 'Check out my latest finds! https://ltk.app.link/abc123 and https://ltk.app.link/xyz789';
+      const ltkCommissions = [
+        { rs_url: 'https://rstyle.me/+abc123', revenue: 50.00, clicks: 100 },
+        { rs_url: 'https://rstyle.me/+xyz789', revenue: 75.00, clicks: 150 },
+        { rs_url: 'https://rstyle.me/+nomatch', revenue: 25.00, clicks: 50 },
+      ];
+
+      // Test extraction
+      const storyCodes = extractLTKAppLinkCodes(instagramStoryText);
+      const rsUrlCodes = ltkCommissions.map(c => ({
+        rs_url: c.rs_url,
+        short_code: extractRSUrlShortCode(c.rs_url || '')
+      }));
+      const matches = matchStoryLinksToCommissions(storyCodes, ltkCommissions);
+
+      updateResult('revenueMatching', {
+        status: 'success',
+        data: {
+          instagram_story_text: instagramStoryText,
+          extracted_codes: storyCodes,
+          rs_url_short_codes: rsUrlCodes,
+          matches: Array.from(matches.entries()).map(([code, commission]) => ({
+            story_code: code,
+            matched_rs_url: commission.rs_url,
+            revenue: commission.revenue,
+            clicks: commission.clicks
+          })),
+          message: 'Revenue matching utilities working correctly!'
+        }
+      });
+    } catch (error: any) {
+      updateResult('revenueMatching', {
+        status: 'error',
+        error: error.message
+      });
+    }
   };
 
   const decodeToken = (token: string) => {
@@ -312,21 +399,40 @@ export default function LTKTest() {
           )}
         </div>
 
-        <button
-          onClick={testAllEndpoints}
-          disabled={!accessToken || !idToken || isTestingAll}
-          className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          data-testid="button-test-all"
-        >
-          {isTestingAll ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Testing All Endpoints...
-            </>
-          ) : (
-            'Test All 14 LTK Endpoints'
-          )}
-        </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <button
+            onClick={testAllEndpoints}
+            disabled={!accessToken || !idToken || isTestingAll}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            data-testid="button-test-all"
+          >
+            {isTestingAll ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Testing...
+              </>
+            ) : (
+              'Test All Endpoints'
+            )}
+          </button>
+          
+          <button
+            onClick={testTokenRefresh}
+            className="bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700 flex items-center justify-center gap-2"
+            data-testid="button-test-refresh"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Test Token Refresh
+          </button>
+          
+          <button
+            onClick={testRevenueMatching}
+            className="bg-purple-600 text-white px-4 py-2 rounded-md font-medium hover:bg-purple-700 flex items-center justify-center gap-2"
+            data-testid="button-test-matching"
+          >
+            Test Revenue Matching
+          </button>
+        </div>
       </div>
 
       {/* Results */}

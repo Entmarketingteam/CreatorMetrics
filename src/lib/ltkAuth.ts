@@ -27,6 +27,7 @@ import { jwtDecode } from 'jwt-decode';
 
 export interface LTKTokens {
   access_token: string;
+  id_token: string; // ID token required for new API gateway
   refresh_token: string;
   expires_at: number; // Unix timestamp in seconds
   token_type: string;
@@ -142,7 +143,13 @@ export class LTKAuthService {
   }
 
   /**
-   * Refresh the access token using refresh token
+   * Refresh the access token using refresh token via Auth0 Token Endpoint
+   * 
+   * Uses Auth0 Token Endpoint: https://creator-auth.shopltk.com/oauth/token
+   * Client ID: iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT
+   * 
+   * IMPORTANT: Captures both access_token AND id_token from the response.
+   * Both tokens are required for the new API gateway.
    * 
    * SECURITY WARNING: This implementation is for TESTING ONLY!
    * 
@@ -151,28 +158,9 @@ export class LTKAuthService {
    * 2. Create a backend proxy endpoint (e.g., POST /api/ltk/refresh-token) that:
    *    - Receives only the refresh_token from the frontend
    *    - Adds client_id and client_secret server-side
-   *    - Forwards the request to LTK's OAuth endpoint
+   *    - Forwards the request to LTK's Auth0 endpoint
    *    - Returns the new tokens to the frontend
    * 3. Use httpOnly cookies instead of localStorage for production token storage
-   * 
-   * Example backend proxy (Express.js):
-   * ```
-   * app.post('/api/ltk/refresh-token', async (req, res) => {
-   *   const { refresh_token } = req.body;
-   *   const response = await fetch('https://api.ltk.ai/oauth/token', {
-   *     method: 'POST',
-   *     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-   *     body: new URLSearchParams({
-   *       grant_type: 'refresh_token',
-   *       refresh_token,
-   *       client_id: process.env.LTK_CLIENT_ID,
-   *       client_secret: process.env.LTK_CLIENT_SECRET,
-   *     }),
-   *   });
-   *   const tokens = await response.json();
-   *   res.json(tokens);
-   * });
-   * ```
    */
   async refreshAccessToken(): Promise<LTKTokens> {
     const tokens = this.getTokens();
@@ -181,11 +169,11 @@ export class LTKAuthService {
     }
 
     try {
-      // PRODUCTION: Replace this with a backend proxy endpoint
-      // Current implementation is INSECURE and for testing only
-      const backendProxyUrl = import.meta.env.VITE_LTK_REFRESH_ENDPOINT || 'https://api.ltk.ai/oauth/token';
+      // Use Auth0 Token Endpoint
+      const auth0TokenEndpoint = 'https://creator-auth.shopltk.com/oauth/token';
+      const clientId = 'iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT';
       
-      const response = await fetch(backendProxyUrl, {
+      const response = await fetch(auth0TokenEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -193,19 +181,30 @@ export class LTKAuthService {
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: tokens.refresh_token,
-          // WARNING: In production, client_id and client_secret should be added by backend
-          client_id: import.meta.env.VITE_LTK_CLIENT_ID || '',
-          client_secret: import.meta.env.VITE_LTK_CLIENT_SECRET || '', // INSECURE! Remove in production
+          client_id: clientId,
+          // WARNING: In production, client_secret should be added by backend proxy
+          // For now, this may work if Auth0 is configured as a public client
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Token refresh failed: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Token refresh failed: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      
+      // CRITICAL: Capture both access_token AND id_token
+      if (!data.access_token) {
+        throw new Error('Missing access_token in refresh response');
+      }
+      if (!data.id_token) {
+        throw new Error('Missing id_token in refresh response - required for new API gateway');
+      }
+
       const newTokens: LTKTokens = {
         access_token: data.access_token,
+        id_token: data.id_token, // Required for X-id-token header
         refresh_token: data.refresh_token || tokens.refresh_token,
         expires_at: Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
         token_type: data.token_type || 'Bearer',
@@ -218,6 +217,55 @@ export class LTKAuthService {
       this.notifyAuthError(error as Error);
       throw error;
     }
+  }
+
+  /**
+   * Refresh LTK tokens using refresh token (standalone function)
+   * 
+   * This is the function specified in the requirements.
+   * Uses Auth0 Token Endpoint and captures both access_token and id_token.
+   */
+  async refresh_ltk_tokens(refresh_token: string): Promise<LTKTokens> {
+    const auth0TokenEndpoint = 'https://creator-auth.shopltk.com/oauth/token';
+    const clientId = 'iKyQz7GfBMBPqUqCbbKSNBUlM2VpNWUT';
+    
+    const response = await fetch(auth0TokenEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refresh_token,
+        client_id: clientId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Token refresh failed: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    // CRITICAL: Capture both access_token AND id_token
+    if (!data.access_token) {
+      throw new Error('Missing access_token in refresh response');
+    }
+    if (!data.id_token) {
+      throw new Error('Missing id_token in refresh response - required for new API gateway');
+    }
+
+    const tokens: LTKTokens = {
+      access_token: data.access_token,
+      id_token: data.id_token, // Required for X-id-token header
+      refresh_token: data.refresh_token || refresh_token,
+      expires_at: Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
+      token_type: data.token_type || 'Bearer',
+    };
+
+    this.storeTokens(tokens);
+    return tokens;
   }
 
   /**
@@ -252,8 +300,18 @@ export class LTKAuthService {
       }
 
       const data = await response.json();
+      
+      // CRITICAL: Capture both access_token AND id_token
+      if (!data.access_token) {
+        throw new Error('Missing access_token in token exchange response');
+      }
+      if (!data.id_token) {
+        throw new Error('Missing id_token in token exchange response - required for new API gateway');
+      }
+
       const tokens: LTKTokens = {
         access_token: data.access_token,
+        id_token: data.id_token, // Required for X-id-token header
         refresh_token: data.refresh_token,
         expires_at: Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
         token_type: data.token_type || 'Bearer',
