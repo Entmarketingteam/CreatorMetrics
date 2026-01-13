@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 350px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #10b981;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+    .status.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #3b82f6;
+    }
+    .token-info {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+    .token-info strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #374151;
+    }
+    .token-value {
+      font-family: monospace;
+      font-size: 11px;
+      word-break: break-all;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: opacity 0.2s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    button:active {
+      opacity: 0.8;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔑 LTK Token Manager</h1>
+  </div>
+  
+  <div id="loading" class="loading">Loading...</div>
+  
+  <div id="content" class="hidden">
+    <div id="status"></div>
+    <div id="tokenInfo"></div>
+    
+    <button id="copyTokens" class="btn-primary">📋 Copy Tokens JSON</button>
+    <button id="sendToApp" class="btn-success">🚀 Send to CreatorMetrics</button>
+    <button id="refreshTokens" class="btn-secondary">🔄 Refresh Tokens</button>
+    <button id="clearTokens" class="btn-danger">🗑️ Clear Tokens</button>
+    
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
+      <p><strong>How it works:</strong></p>
+      <p>1. Visit <a href="https://creator.shopltk.com" target="_blank">creator.shopltk.com</a></p>
+      <p>2. Extension automatically captures tokens</p>
+      <p>3. Click "Send to CreatorMetrics" to sync</p>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
