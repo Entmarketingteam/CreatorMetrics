@@ -44,11 +44,17 @@ if (isProd) {
   // Serve static assets FIRST (before fallback)
   app.use(express.static(distPath));
   
-  // SPA fallback - serve index.html for all non-API GET routes
-  app.get('/*', (req, res) => {
-    // Skip API routes
-    if (req.path.startsWith('/api')) {
-      return res.status(404).json({ error: 'Not found' });
+  // SPA fallback - serve index.html for all non-API routes
+  // Express 5 requires named parameters for wildcards
+  app.use((req, res, next) => {
+    // Skip API routes and static files
+    if (req.path.startsWith('/api') || req.path.startsWith('/assets')) {
+      return next();
+    }
+    
+    // Only handle GET requests for SPA routing
+    if (req.method !== 'GET') {
+      return next();
     }
     
     // Check if build exists before attempting to serve
@@ -57,7 +63,7 @@ if (isProd) {
       return res.status(503).send('Application build not available. Please run: npm run build');
     }
     
-    // Serve with error callback for async sendFile
+    // Serve index.html for SPA routing
     res.sendFile(indexPath, (err) => {
       if (err) {
         console.error('Failed to serve index.html:', err);
