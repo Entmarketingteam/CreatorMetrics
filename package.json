@@ -10,7 +10,6 @@
     "build": "vite build",
     "start": "NODE_ENV=production tsx server/index.ts",
     "start:prod": "npm run build && npm run start",
-    "postinstall": "npm run build",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
