@@ -20,11 +20,24 @@ This guide covers deploying CreatorMetrics to Railway and Vercel.
    - Start command: `npm run start`
 
 3. **Set Environment Variables:**
+   
+   **📋 See `RAILWAY-ENV-VARIABLES.md` for complete setup guide**
+   
+   **Required:**
    ```
-   NODE_ENV=production
-   PORT=3001 (auto-set by Railway, but can override)
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_key
+   DATABASE_URL=postgresql://... (if using Instagram posts)
+   ```
+   
+   **Auto-set by Railway (no action needed):**
+   ```
+   NODE_ENV=production
+   PORT=3001
+   ```
+   
+   **Optional:**
+   ```
    VITE_BACKEND_URL= (leave empty for same-origin)
    ```
 
