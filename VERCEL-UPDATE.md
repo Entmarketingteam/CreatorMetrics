@@ -32,8 +32,10 @@ Since your Vercel deployment is working for the frontend, here's the best approa
 
 2. **Update Vercel Environment Variable:**
    - Go to Vercel dashboard → Your project → Settings → Environment Variables
-   - Add: `VITE_BACKEND_URL=https://your-railway-app.railway.app`
+   - Add: `VITE_BACKEND_URL=https://web-production-7199b.up.railway.app`
    - Redeploy
+   
+   **📋 See `VERCEL-RAILWAY-SETUP.md` for complete step-by-step guide**
 
 3. **Result:**
    - Frontend on Vercel (fast, CDN)
